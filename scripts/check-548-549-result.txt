@@ -1,0 +1,80 @@
+﻿
+============================================================
+548 ?頛?(N擃???116))
+============================================================
+
+Invoices: total=19 paid=19 draft=0 other=0
+Paid total: $76,000
+Draft total: $0
+  [paid ] H23-548-N-01 | $4000 | 2024-06-19~2024-07-17 | paid:-- | id:9544
+  [paid ] H23-548-N-02 | $4000 | 2024-07-31~2024-08-28 | paid:-- | id:9545
+  [paid ] H24-548-N-01 | $4000 | 2024-09-08~2024-10-06 | paid:-- | id:10279
+  [paid ] H24-548-N-02 | $4000 | 2024-10-13~2024-11-17 | paid:-- | id:10280
+  [paid ] H24-548-N-03 | $4000 | 2024-11-24~2024-12-22 | paid:-- | id:10281
+  [paid ] H24-548-N-04 | $4000 | 2024-12-29~2025-02-11 | paid:-- | id:10282
+  [paid ] H24-548-N-05 | $4000 | 2025-03-05~2025-04-04 | paid:-- | id:10283
+  [paid ] H24-548-N-06 | $4000 | 2025-04-13~2025-05-11 | paid:-- | id:10284
+  [paid ] H24-548-N-07 | $4000 | 2025-05-18~2025-06-15 | paid:-- | id:10285
+  [paid ] H24-548-N-08 | $4000 | 2025-06-22~2025-07-30 | paid:-- | id:10286
+  [paid ] 26-548-08-N-01 | $4000 | 2025-09-03~2025-09-07 | paid:-- | id:3437
+  [paid ] 26-548-09-N-02 | $4000 | 2025-09-10~2025-09-24 | paid:-- | id:3438
+  [paid ] 26-548-09-N-03 | $4000 | 2025-09-30~2025-10-11 | paid:-- | id:3439
+  [paid ] 26-548-10-N-04 | $4000 | 2025-10-19~2025-11-05 | paid:2026-04-04 | id:3440
+  [paid ] 26-548-11-N-05 | $4000 | 2025-11-09~2025-11-23 | paid:2026-04-04 | id:3441
+  [paid ] 26-548-11-N-06 | $4000 | 2025-11-26~2025-12-31 | paid:2026-04-04 | id:3442
+  [paid ] 26-548-01-N-07 | $4000 | 2026-01-04~2026-01-28 | paid:2026-03-27 | id:3443
+  [paid ] 26-548-01-N-08 | $4000 | 2026-02-01~2026-02-28 | paid:2026-03-27 | id:3959
+  [paid ] 26-548-03-N-09 | $4000 | 2026-03-03~2026-03-17 | paid:2026-03-27 | id:10809
+
+Payments: 19
+  $4000 | 2024-08-12 | historical_import | invoiceId:9544
+  $4000 | 2024-09-08 | historical_import | invoiceId:9545
+  $4000 | 2024-10-20 | historical_import | invoiceId:10279
+  $4000 | 2024-12-02 | historical_import | invoiceId:10280
+  $4000 | 2024-12-29 | historical_import | invoiceId:10281
+  $4000 | 2025-02-24 | historical_import | invoiceId:10282
+  $4000 | 2025-04-04 | historical_import | invoiceId:10283
+  $4000 | 2025-05-19 | historical_import | invoiceId:10284
+  $4000 | 2025-06-23 | historical_import | invoiceId:10285
+  $4000 | 2025-08-06 | historical_import | invoiceId:10286
+  $4000 | 2025-09-10 | historical_import | invoiceId:3437
+  $4000 | 2025-10-07 | historical_import | invoiceId:3438
+  $4000 | 2025-11-19 | historical_import | invoiceId:3439
+  $4000 | 2026-03-27 | sheet_sync | invoiceId:3443
+  $4000 | 2026-03-27 | sheet_sync | invoiceId:10809
+  $4000 | 2026-03-27 | sheet_sync | invoiceId:3959
+  $4000 | 2026-04-04 | cash | invoiceId:3442
+  $4000 | 2026-04-04 | cash | invoiceId:3441
+  $4000 | 2026-04-04 | cash | invoiceId:3440
+
+>>> No draft invoices found. All invoices are paid.
+
+>>> Billing page shows LATEST invoice: 26-548-03-N-09 status=paid
+
+============================================================
+549 ????(N擃???116))
+============================================================
+
+Invoices: total=7 paid=7 draft=0 other=0
+Paid total: $28,000
+Draft total: $0
+  [paid ] H24-549-N-01 | $4000 | 2025-06-19~2025-07-23 | paid:-- | id:10287
+  [paid ] H24-549-N-02 | $4000 | 2025-07-30~2025-08-27 | paid:-- | id:10288
+  [paid ] 26-549-09-N-01 | $4000 | 2025-09-03~2025-10-01 | paid:-- | id:3444
+  [paid ] 26-549-10-N-02 | $4000 | 2025-10-08~2025-11-05 | paid:-- | id:3445
+  [paid ] 26-549-11-N-03 | $4000 | 2025-11-12~2025-12-17 | paid:-- | id:3446
+  [paid ] 26-549-12-N-04 | $4000 | 2025-12-24~2026-01-28 | paid:2026-04-04 | id:3447
+  [paid ] 26-549-02-N-05 | $4000 | 2026-02-04~2026-03-11 | paid:2026-03-27 | id:3926
+
+Payments: 7
+  $4000 | 2025-08-04 | historical_import | invoiceId:10287
+  $4000 | 2025-09-08 | historical_import | invoiceId:10288
+  $4000 | 2025-10-27 | historical_import | invoiceId:3444
+  $4000 | 2025-12-01 | historical_import | invoiceId:3446
+  $4000 | 2026-01-05 | historical_import | invoiceId:3445
+  $4000 | 2026-03-27 | sheet_sync | invoiceId:3926
+  $4000 | 2026-04-04 | sheet_sync | invoiceId:3447
+
+>>> No draft invoices found. All invoices are paid.
+
+>>> Billing page shows LATEST invoice: 26-549-02-N-05 status=paid

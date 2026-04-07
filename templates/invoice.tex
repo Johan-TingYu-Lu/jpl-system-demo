@@ -1,0 +1,195 @@
+% JPL 補習班收費單 LaTeX 模板
+% 使用 XeLaTeX 編譯，需要 xeCJK + 標楷體
+\documentclass[a4paper]{article}
+
+\usepackage[top=1.5cm, bottom=1.5cm, left=2cm, right=2cm]{geometry}
+\usepackage{xeCJK}
+\setCJKmainfont[Path=<<FONT_DIR>>,BoldFont=kaiu.ttf]{kaiu.ttf}
+\usepackage{graphicx}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{qrcode}
+\usepackage{dashundergaps}
+\usepackage{tikz}
+\usepackage{fancyhdr}
+\usepackage{setspace}
+
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\setlength{\tabcolsep}{4pt}
+
+% ============================================================================
+% Variables (filled by Node.js template engine)
+% ============================================================================
+\newcommand{\serialNum}{<<SERIAL>>}
+\newcommand{\hashCode}{<<HASH>>}
+\newcommand{\studentName}{<<NAME>>}
+\newcommand{\subjectName}{<<SUBJECT>>}
+\newcommand{\billingDate}{<<BILLING_DATE>>}
+\newcommand{\totalFee}{<<TOTAL_FEE>>}
+\newcommand{\sessionInfo}{<<SESSION_INFO>>}
+\newcommand{\receiptText}{<<RECEIPT_TEXT>>}
+\newcommand{\billYear}{<<BILL_YEAR>>}
+\newcommand{\qrUrl}{<<QR_URL>>}
+\newcommand{\stampTaxPath}{<<STAMP_TAX_PATH>>}
+\newcommand{\stampLargePath}{<<STAMP_LARGE_PATH>>}
+
+% Date table rows (filled dynamically)
+% <<DATE_ROWS>>
+
+% ============================================================================
+% Top Half: 收費單
+% ============================================================================
+\begin{document}
+
+% --- Serial & Hash (right aligned, small) ---
+\begin{flushright}
+\small 收費單編號：\serialNum \quad 驗證碼：\hashCode
+\end{flushright}
+
+\vspace{2mm}
+
+% --- Title ---
+\begin{center}
+{\LARGE\bfseries 臺東縣私立尬數理工文理短期補習班\quad 收費單}
+\end{center}
+
+\vspace{4mm}
+
+% --- Info Table ---
+\begin{center}
+\renewcommand{\arraystretch}{1.8}
+\begin{tabular}{|>{\centering\arraybackslash}m{3.2cm}|>{\centering\arraybackslash}m{4.5cm}|>{\centering\arraybackslash}m{3.2cm}|>{\centering\arraybackslash}m{4.5cm}|}
+\hline
+\large 學生姓名： & \large \studentName（\subjectName） & \large 收費日期： & \large \textbf{\billingDate} \\
+\hline
+\large 上課次數： & \large \sessionInfo & \large 收費金額： & \large \textbf{\totalFee} \\
+\hline
+\end{tabular}
+\end{center}
+
+\vspace{4mm}
+
+% --- Attendance Dates ---
+\begin{center}
+\renewcommand{\arraystretch}{2.0}
+<<DATE_TABLE_TOP>>
+\end{center}
+
+% <<NOTE_PLACEHOLDER>>
+
+\vspace{6mm}
+
+% ============================================================================
+% Tear line
+% ============================================================================
+\begin{center}
+\begin{tikzpicture}
+\draw[dashed, gray, thick] (0,0) -- (\textwidth-1cm,0);
+\node at (\textwidth/2 - 0.5cm, 0) [fill=white, text=gray] {\small\quad ✂ \quad};
+\end{tikzpicture}
+\end{center}
+
+\vspace{4mm}
+
+% ============================================================================
+% Bottom Half: 繳費收據
+% ============================================================================
+
+\begin{flushright}
+\small 收費單編號：\serialNum \quad 驗證碼：\hashCode
+\end{flushright}
+
+\vspace{2mm}
+
+\begin{center}
+{\LARGE\bfseries 臺東縣私立尬數理工文理短期補習班\quad 繳費收據}
+\end{center}
+
+\vspace{4mm}
+
+% --- Info Table (same) ---
+\begin{center}
+\renewcommand{\arraystretch}{1.8}
+\begin{tabular}{|>{\centering\arraybackslash}m{3.2cm}|>{\centering\arraybackslash}m{4.5cm}|>{\centering\arraybackslash}m{3.2cm}|>{\centering\arraybackslash}m{4.5cm}|}
+\hline
+\large 學生姓名： & \large \studentName（\subjectName） & \large 收費日期： & \large \textbf{\billingDate} \\
+\hline
+\large 上課次數： & \large \sessionInfo & \large 收費金額： & \large \textbf{\totalFee} \\
+\hline
+\end{tabular}
+\end{center}
+
+\vspace{2mm}
+
+% --- Attendance Dates (no header, just dates) ---
+\begin{center}
+\renewcommand{\arraystretch}{2.0}
+<<DATE_TABLE_BOTTOM>>
+\end{center}
+
+\vspace{4mm}
+
+% --- Receipt statement ---
+\begin{center}
+\large \receiptText
+\end{center}
+
+\vspace{2mm}
+
+{\large \hfill 此\qquad 據 \hfill\hfill}
+
+\vspace{6mm}
+
+% --- Stamps ---
+\begin{center}
+\begin{tabular}{m{3.5cm} m{8cm} m{3.5cm}}
+\centering \includegraphics[height=3cm]{\stampTaxPath} &
+\centering
+\parbox{8cm}{\centering
+{\large 臺東縣私立尬數理工文理短期補習班}\\[6pt]
+{\large 經收人：\underline{\hspace{3cm}}}\\[8pt]
+{\large \billYear 年\quad\underline{\hspace{1.2cm}}\quad 月\quad\underline{\hspace{1.2cm}}\quad 日}
+}
+&
+\centering \includegraphics[height=3cm]{\stampLargePath}
+\end{tabular}
+\end{center}
+
+% ============================================================================
+% Page 2: Notes (top) + QR Code (bottom, aligns with signature area back)
+% ============================================================================
+\newpage
+
+\vspace*{5mm}
+
+{\large 收費次數：每次上課為兩節課，若有特殊狀況，以一節計費。}
+
+\vspace{3mm}
+
+{\large 如有任何問題，歡迎家長聯繫：\quad 0972-029097，呂老師。}
+
+\begin{flushright}
+{\large （LINE：johansoros）}
+\end{flushright}
+
+\vspace{3mm}
+
+{\large 若有意以電子支付或匯款當期費用，亦可透過 LINE PAY、Taiwan Pay 等支付工具。謝謝您。}
+
+\vspace{10mm}
+
+\begin{center}
+\rule{0.6\textwidth}{0.4pt}
+\end{center}
+
+\vspace{10mm}
+
+\begin{center}
+\qrcode[height=3.5cm]{\qrUrl}
+
+\vspace{3mm}
+{\small 掃描 QR Code 銷帳}
+\end{center}
+
+\end{document}

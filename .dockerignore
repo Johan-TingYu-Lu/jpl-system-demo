@@ -1,0 +1,15 @@
+node_modules
+.next
+.env
+.env.*
+.git
+.gitignore
+*.md
+docs/
+scripts/
+Stamp/
+*.json.bak
+generated_invoices_latex/
+coverage/
+.vscode/
+.claude/

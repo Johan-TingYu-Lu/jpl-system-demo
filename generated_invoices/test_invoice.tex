@@ -1,0 +1,164 @@
+% JPL Invoice Test
+\documentclass[a4paper]{article}
+\usepackage[top=1.5cm, bottom=1.5cm, left=2cm, right=2cm]{geometry}
+\usepackage{xeCJK}
+\setCJKmainfont{標楷體}
+\usepackage{graphicx}
+\usepackage{array}
+\usepackage{tikz}
+\usepackage{qrcode}
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\setlength{\tabcolsep}{4pt}
+
+\begin{document}
+
+% === TOP HALF: 收費單 ===
+\begin{flushright}
+\small 收費單編號：26-46-09-M-01\quad 驗證碼：224C138D
+\end{flushright}
+
+\vspace{2mm}
+
+\begin{center}
+{\LARGE\bfseries 臺東縣私立尬數理工文理短期補習班\quad 收費單}
+\end{center}
+
+\vspace{4mm}
+
+\begin{center}
+\renewcommand{\arraystretch}{1.8}
+\begin{tabular}{|p{3.2cm}|p{4.5cm}|p{3.2cm}|p{4.5cm}|}
+\hline
+\large 學生姓名： & \large 林聖傑（數學） & \large 收費日期： & \large \textbf{2026/03/09} \\
+\hline
+\large 上課次數： & \large 2次6H & \large 收費金額： & \large \textbf{1600} \\
+\hline
+\end{tabular}
+\end{center}
+
+\vspace{4mm}
+
+\begin{center}
+\renewcommand{\arraystretch}{1.6}
+\begin{tabular}{|*{5}{>{\centering\arraybackslash}p{2.8cm}|}}
+\hline
+\multicolumn{5}{|c|}{\Large\textbf{上課紀錄}} \\
+\hline
+\large\textbf{09/10} & \large\textbf{09/17} &  &  &  \\
+\hline
+\end{tabular}
+\end{center}
+
+\vspace{8mm}
+
+% === TEAR LINE ===
+\begin{center}
+\begin{tikzpicture}
+\draw[dashed, gray, thick] (0,0) -- (\textwidth - 1cm,0);
+\node at (\textwidth/2 - 0.5cm, 0) [fill=white, text=gray] {\small\quad \( \times \) \quad};
+\end{tikzpicture}
+\end{center}
+
+\vspace{4mm}
+
+% === BOTTOM HALF: 繳費收據 ===
+\begin{flushright}
+\small 收費單編號：26-46-09-M-01\quad 驗證碼：224C138D
+\end{flushright}
+
+\vspace{2mm}
+
+\begin{center}
+{\LARGE\bfseries 臺東縣私立尬數理工文理短期補習班\quad 繳費收據}
+\end{center}
+
+\vspace{4mm}
+
+\begin{center}
+\renewcommand{\arraystretch}{1.8}
+\begin{tabular}{|p{3.2cm}|p{4.5cm}|p{3.2cm}|p{4.5cm}|}
+\hline
+\large 學生姓名： & \large 林聖傑（數學） & \large 收費日期： & \large \textbf{2026/03/09} \\
+\hline
+\large 上課次數： & \large 2次6H & \large 收費金額： & \large \textbf{1600} \\
+\hline
+\end{tabular}
+\end{center}
+
+\vspace{2mm}
+
+\begin{center}
+\renewcommand{\arraystretch}{1.6}
+\begin{tabular}{|*{5}{>{\centering\arraybackslash}p{2.8cm}|}}
+\hline
+\large\textbf{09/10} & \large\textbf{09/17} &  &  &  \\
+\hline
+\end{tabular}
+\end{center}
+
+\vspace{4mm}
+
+\begin{center}
+\large 茲\hspace{0.5em}收到 貴子弟 林聖傑，2025年 09 月 課程費用 1600 元整。
+\end{center}
+
+\vspace{2mm}
+
+{\large \hfill 此\qquad 據 \hfill\hfill}
+
+\vspace{6mm}
+
+% === STAMPS + QR ===
+\begin{center}
+\begin{tabular}{m{3cm} m{5.5cm} m{3cm} m{2.8cm}}
+\centering \includegraphics[height=2.8cm]{C:/Users/johan/Documents/NEW_SYSTEM/Stamp/印花稅 (1).jpg} &
+\centering
+{\large 臺東縣私立尬數理工文理}
+
+{\large 短期補習班}
+
+\vspace{3mm}
+{\large 經收人：\underline{\hspace{2.5cm}}}
+&
+\centering \includegraphics[height=2.8cm]{C:/Users/johan/Documents/NEW_SYSTEM/Stamp/大印數位檔.jpg} &
+\centering \qrcode[height=2.5cm]{https://jpl.app/verify/224C138D}
+\end{tabular}
+\end{center}
+
+\vspace{4mm}
+
+{\large \hfill 2025年\quad\underline{\hspace{1.5cm}}\quad 月\quad\underline{\hspace{1.5cm}}\quad 日 \hspace{1cm}}
+
+% === PAGE 2: Notes ===
+\newpage
+
+\vspace*{5mm}
+
+{\large 收費次數：每次上課為兩節課，若有特殊狀況，以一節計費。}
+
+\vspace{3mm}
+
+{\large 如有任何問題，歡迎家長聯繫：\quad 0972-029097，呂老師。}
+
+\begin{flushright}
+{\large （LINE：johansoros）}
+\end{flushright}
+
+\vspace{3mm}
+
+{\large 若有意以電子支付或匯款當期費用，亦可透過 LINE PAY、Taiwan Pay 等支付工具。謝謝您。}
+
+\vspace{10mm}
+
+\begin{center}
+掃描 QR Code 可於線上驗證本收費單：
+
+\vspace{3mm}
+\qrcode[height=3cm]{https://jpl.app/verify/224C138D}
+
+\vspace{2mm}
+{\small https://jpl.app/verify/224C138D}
+\end{center}
+
+\end{document}

@@ -1,0 +1,200 @@
+========================================
+548 & 598 billing DB vs Sheets
+========================================
+
+=== DB: 548 劉懿輝 (N高二班(116)) ===
+Status: active
+
+Invoices (19):
+  26-548-08-N-01 | $4000 | 2025-09-03~2025-09-07 | YY:2 Y:0 totalY:4 | paid | issued:-- paid:--
+  26-548-09-N-02 | $4000 | 2025-09-10~2025-09-24 | YY:4 Y:0 totalY:8 | paid | issued:-- paid:--
+  26-548-09-N-03 | $4000 | 2025-09-30~2025-10-11 | YY:5 Y:0 totalY:10 | paid | issued:-- paid:--
+  26-548-10-N-04 | $4000 | 2025-10-19~2025-11-05 | YY:5 Y:0 totalY:10 | paid | issued:-- paid:2026-04-04
+  26-548-11-N-05 | $4000 | 2025-11-09~2025-11-23 | YY:5 Y:0 totalY:10 | paid | issued:-- paid:2026-04-04
+  26-548-11-N-06 | $4000 | 2025-11-26~2025-12-31 | YY:5 Y:0 totalY:10 | paid | issued:-- paid:2026-04-04
+  26-548-01-N-07 | $4000 | 2026-01-04~2026-01-28 | YY:5 Y:0 totalY:10 | paid | issued:-- paid:2026-03-27
+  26-548-01-N-08 | $4000 | 2026-02-01~2026-02-28 | YY:5 Y:0 totalY:10 | paid | issued:2026-03-13 paid:2026-03-27
+  H23-548-N-01 | $4000 | 2024-06-19~2024-07-17 | YY:5 Y:0 totalY:10 | paid | issued:-- paid:--
+  H23-548-N-02 | $4000 | 2024-07-31~2024-08-28 | YY:5 Y:0 totalY:10 | paid | issued:-- paid:--
+  H24-548-N-01 | $4000 | 2024-09-08~2024-10-06 | YY:5 Y:0 totalY:10 | paid | issued:-- paid:--
+  H24-548-N-02 | $4000 | 2024-10-13~2024-11-17 | YY:5 Y:0 totalY:10 | paid | issued:-- paid:--
+  H24-548-N-03 | $4000 | 2024-11-24~2024-12-22 | YY:5 Y:0 totalY:10 | paid | issued:-- paid:--
+  H24-548-N-04 | $4000 | 2024-12-29~2025-02-11 | YY:5 Y:0 totalY:10 | paid | issued:-- paid:--
+  H24-548-N-05 | $4000 | 2025-03-05~2025-04-04 | YY:5 Y:0 totalY:10 | paid | issued:-- paid:--
+  H24-548-N-06 | $4000 | 2025-04-13~2025-05-11 | YY:5 Y:0 totalY:10 | paid | issued:-- paid:--
+  H24-548-N-07 | $4000 | 2025-05-18~2025-06-15 | YY:5 Y:0 totalY:10 | paid | issued:-- paid:--
+  H24-548-N-08 | $4000 | 2025-06-22~2025-07-30 | YY:5 Y:0 totalY:10 | paid | issued:-- paid:--
+  26-548-03-N-09 | $4000 | 2026-03-03~2026-03-17 | YY:5 Y:0 totalY:10 | paid | issued:-- paid:2026-03-27
+
+Payments (19):
+  $4000 | 2024-08-12 | historical_import
+  $4000 | 2024-09-08 | historical_import
+  $4000 | 2024-10-20 | historical_import
+  $4000 | 2024-12-02 | historical_import
+  $4000 | 2024-12-29 | historical_import
+  $4000 | 2025-02-24 | historical_import
+  $4000 | 2025-04-04 | historical_import
+  $4000 | 2025-05-19 | historical_import
+  $4000 | 2025-06-23 | historical_import
+  $4000 | 2025-08-06 | historical_import
+  $4000 | 2025-09-10 | historical_import
+  $4000 | 2025-10-07 | historical_import
+  $4000 | 2025-11-19 | historical_import
+  $4000 | 2026-03-27 | sheet_sync
+  $4000 | 2026-03-27 | sheet_sync
+  $4000 | 2026-03-27 | sheet_sync
+  $4000 | 2026-04-04 | cash
+  $4000 | 2026-04-04 | cash
+  $4000 | 2026-04-04 | cash
+
+SemesterFees (4):
+  112 sem2 | $1000 | 2024-06-24 | paid
+  113 sem1 | $1000 | 2024-06-24 | paid
+  113 sem2 | $1000 | 2025-02-24 | paid
+  114 sem1 | $1000 | 2025-09-10 | paid
+
+=== DB: 598 劉懿輝 (M高二班(116)) ===
+Status: active
+
+Invoices (16):
+  26-598-08-M-01 | $4000 | 2025-09-08~2025-09-30 | YY:4 Y:0 totalY:8 | paid | issued:-- paid:--
+  26-598-10-M-02 | $4000 | 2025-10-07~2025-11-03 | YY:5 Y:0 totalY:10 | paid | issued:-- paid:--
+  26-598-11-M-03 | $4000 | 2025-11-10~2025-12-08 | YY:5 Y:0 totalY:10 | paid | issued:-- paid:--
+  26-598-12-M-04 | $4000 | 2025-12-15~2026-01-12 | YY:5 Y:0 totalY:10 | paid | issued:-- paid:2026-04-04
+  26-598-01-M-05 | $4000 | 2026-01-26~2026-03-02 | YY:5 Y:0 totalY:10 | paid | issued:2026-03-13 paid:2026-03-27
+  H23-598-M-01 | $4000 | 2024-06-24~2024-08-12 | YY:5 Y:0 totalY:10 | paid | issued:-- paid:--
+  H24-598-M-01 | $4000 | 2024-08-19~2024-09-16 | YY:5 Y:0 totalY:10 | paid | issued:-- paid:--
+  H24-598-M-02 | $4000 | 2024-09-23~2024-10-21 | YY:5 Y:0 totalY:10 | paid | issued:-- paid:--
+  H24-598-M-03 | $4000 | 2024-10-28~2024-11-25 | YY:5 Y:0 totalY:10 | paid | issued:-- paid:--
+  H24-598-M-04 | $4000 | 2024-12-02~2024-12-30 | YY:5 Y:0 totalY:10 | paid | issued:-- paid:--
+  H24-598-M-05 | $4000 | 2025-01-06~2025-02-10 | YY:5 Y:0 totalY:10 | paid | issued:-- paid:--
+  H24-598-M-06 | $4000 | 2025-02-24~2025-03-24 | YY:5 Y:0 totalY:10 | paid | issued:-- paid:--
+  H24-598-M-07 | $4000 | 2025-03-31~2025-04-28 | YY:5 Y:0 totalY:10 | paid | issued:-- paid:--
+  H24-598-M-08 | $4000 | 2025-05-05~2025-05-31 | YY:5 Y:0 totalY:10 | paid | issued:-- paid:--
+  H24-598-M-09 | $4000 | 2025-06-02~2025-07-14 | YY:5 Y:0 totalY:10 | paid | issued:-- paid:--
+  H24-598-M-10 | $4000 | 2025-07-21~2025-08-25 | YY:5 Y:0 totalY:10 | paid | issued:-- paid:--
+
+Payments (16):
+  $4000 | 2024-08-12 | historical_import
+  $4000 | 2024-10-20 | historical_import
+  $4000 | 2024-12-02 | historical_import
+  $4000 | 2024-12-29 | historical_import
+  $4000 | 2025-02-24 | historical_import
+  $4000 | 2025-02-24 | historical_import
+  $4000 | 2025-04-04 | historical_import
+  $4000 | 2025-05-19 | historical_import
+  $4000 | 2025-06-23 | historical_import
+  $4000 | 2025-08-06 | historical_import
+  $4000 | 2025-09-10 | historical_import
+  $4000 | 2025-10-07 | historical_import
+  $4000 | 2025-11-19 | historical_import
+  $4000 | 2025-12-15 | historical_import
+  $4000 | 2026-03-27 | sheet_sync
+  $4000 | 2026-04-04 | cash
+
+SemesterFees (5):
+  112 sem2 | $1000 | 2024-07-10 | paid
+  113 sem1 | $1000 | 2024-07-10 | paid
+  113 sem2 | $1000 | 2025-02-24 | paid
+  114 sem2 | $1000 | 2026-03-24 | paid
+  114 sem1 | $1000 | 2025-09-10 | paid
+
+========================================
+Google Sheets Data
+========================================
+
+--- Sheets Summary: 548 ---
+  Name: 劉懿輝
+  Class: N高二班(116)
+  col[5] total-outstanding: -10000
+  col[6] total-balance: -14000
+  col[7] total-paid-amount: 24000
+  col[9] total-owed: 34400
+  col[10] invoice-count: 9
+  col[11] paid-count: 6
+  col[12] unpaid-invoices-count: 3
+  col[13] unpaid-payments-count: 3
+  col[14] outstanding-count: 3
+  col[18] unit-fee: 800
+  col[19] balance: -4000
+  col[23] upper-misc-amount: 1000
+  col[24] upper-misc-date: 2025-09-09
+  col[25] lower-misc-amount: 
+  col[26] lower-misc-date: 
+
+--- Sheets Summary: 598 ---
+  Name: 劉懿輝
+  Class: M高二班(116)
+  col[5] total-outstanding: -3200
+  col[6] total-balance: -7200
+  col[7] total-paid-amount: 16000
+  col[9] total-owed: 22400
+  col[10] invoice-count: 5
+  col[11] paid-count: 4
+  col[12] unpaid-invoices-count: 1
+  col[13] unpaid-payments-count: 1
+  col[14] outstanding-count: 1
+  col[18] unit-fee: 800
+  col[19] balance: -4000
+  col[23] upper-misc-amount: 1000
+  col[24] upper-misc-date: 2025-09-09
+  col[25] lower-misc-amount: 1000
+  col[26] lower-misc-date: 3/24
+
+--- Sheets Billing Dates: 548 ---
+  Invoice count (col3): 9
+  #1: 2025-08-15 ~ 2025-09-06
+  #2: 2025-09-09 ~ 2025-09-23
+  #3: 2025-09-29 ~ 2025-10-10
+  #4: 2025-10-18 ~ 2025-11-04
+  #5: 2025-11-08 ~ 2025-11-22
+  #6: 2025-11-25 ~ 2025-12-30
+  #7: 2026-01-03 ~ 2026-01-27
+  #8: 2026-01-30 ~ 2026-02-26
+  #9: 2026-03-03 ~ 2026-03-17
+
+--- Sheets Billing Dates: 598 ---
+  Invoice count (col3): 5
+  #1: 2025-08-31 ~ 2025-09-29
+  #2: 2025-10-06 ~ 2025-11-02
+  #3: 2025-11-09 ~ 2025-12-07
+  #4: 2025-12-14 ~ 2026-01-11
+  #5: 2026-01-24 ~ 2026-02-28
+
+--- Sheets Fee Amounts: 548 ---
+  Total paid (col3): 24000
+  Fee count (col5): 6
+  #1: $4000
+  #2: $4000
+  #3: $4000
+  #4: $4000
+  #5: $4000
+  #6: $4000
+
+--- Sheets Fee Amounts: 598 ---
+  Total paid (col3): 16000
+  Fee count (col5): 4
+  #1: $4000
+  #2: $4000
+  #3: $4000
+  #4: $4000
+
+--- Sheets Payment Dates: 548 ---
+  Total payment count (col3): 6
+  Paid count (col4): 6
+  #1: 2025-09-09
+  #2: 2025-10-06
+  #3: 2025-11-18
+  #4: 2026-04-04
+  #5: 2026-04-04
+  #6: 2026-04-04
+
+--- Sheets Payment Dates: 598 ---
+  Total payment count (col3): 4
+  Paid count (col4): 4
+  #1: 2025-10-06
+  #2: 2025-11-18
+  #3: 2025-12-14
+  #4: 2026-04-04
+
+========================================

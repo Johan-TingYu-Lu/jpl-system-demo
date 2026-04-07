@@ -1,0 +1,80 @@
+﻿
+============================================================
+Sheets status for 548
+============================================================
+
+Billing dates: invoice count = 9
+  #1: 2025-08-15 ~ 2025-09-06
+  #2: 2025-09-09 ~ 2025-09-23
+  #3: 2025-09-29 ~ 2025-10-10
+  #4: 2025-10-18 ~ 2025-11-04
+  #5: 2025-11-08 ~ 2025-11-22
+  #6: 2025-11-25 ~ 2025-12-30
+  #7: 2026-01-03 ~ 2026-01-27
+  #8: 2026-01-30 ~ 2026-02-26
+  #9: 2026-03-03 ~ 2026-03-17
+
+Fee amounts: total paid = $24000, fee count = 6
+  #1: $4000
+  #2: $4000
+  #3: $4000
+  #4: $4000
+  #5: $4000
+  #6: $4000
+
+Payment dates: payment count(col3) = 6, paid count(col4) = 6
+  #1: 2025-09-09 (45909)
+  #2: 2025-10-06 (45936)
+  #3: 2025-11-18 (45979)
+  #4: 2025-11-18 (45979)
+  #5: 2025-12-14 (46005)
+  #6: 2026-02-01 (46054)
+
+DB 114-year invoices: 9 total, 9 paid
+
+GAP ANALYSIS:
+  Sheet billing dates count: 9
+  Sheet fee amounts count:   6
+  DB 114 invoices:           9
+  DB 114 paid:               9
+
+  >>> MISSING 3 payment records in Sheets!
+  >>> Need to push payments #7 through #9
+  Push #7: 26-548-01-N-07 $4000 paid:2026-03-27
+  Push #8: 26-548-01-N-08 $4000 paid:2026-03-27
+  Push #9: 26-548-03-N-09 $4000 paid:2026-03-27
+
+============================================================
+Sheets status for 549
+============================================================
+
+Billing dates: invoice count = 5
+  #1: 2025-09-02 ~ 2025-09-30
+  #2: 2025-10-07 ~ 2025-11-04
+  #3: 2025-11-11 ~ 2025-12-16
+  #4: 2025-12-23 ~ 2026-01-27
+  #5: 2026-02-02 ~ 2026-03-09
+
+Fee amounts: total paid = $16000, fee count = 4
+  #1: $4000
+  #2: $4000
+  #3: $4000
+  #4: $4000
+
+Payment dates: payment count(col3) = 4, paid count(col4) = 4
+  #1: 2025-10-26 (45956)
+  #2: 2026-01-04 (46026)
+  #3: 2025-11-30 (45991)
+  #4: 2025-11-30 (45991)
+
+DB 114-year invoices: 5 total, 5 paid
+
+GAP ANALYSIS:
+  Sheet billing dates count: 5
+  Sheet fee amounts count:   4
+  DB 114 invoices:           5
+  DB 114 paid:               5
+
+  >>> MISSING 1 payment records in Sheets!
+  >>> Need to push payments #5 through #5
+  Push #5: 26-549-02-N-05 $4000 paid:2026-03-27

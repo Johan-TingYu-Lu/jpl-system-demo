@@ -1,0 +1,177 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Person {
+  id              Int          @id @default(autoincrement())
+  name            String
+  englishName     String?      @map("english_name")
+  nickname        String?
+  birthday        String?
+  gender          String?
+  phone           String?
+  fb              String?
+  lineId          String?      @map("line_id")
+  contactName     String?      @map("contact_name")
+  contactRelation String?      @map("contact_relation")
+  contactPhone    String?      @map("contact_phone")
+  contactFb       String?      @map("contact_fb")
+  highSchool      String?      @map("high_school")
+  highSchoolYear  String?      @map("high_school_year")
+  juniorHigh      String?      @map("junior_high")
+  juniorHighYear  String?      @map("junior_high_year")
+  notes           String?
+  riskLevel       Int          @default(0) @map("risk_level") @db.SmallInt
+  riskNotes       String?      @map("risk_notes")
+  createdAt       DateTime     @default(now()) @map("created_at")
+  updatedAt       DateTime     @updatedAt @map("updated_at")
+  enrollments     Enrollment[]
+
+  @@map("persons")
+}
+
+model Enrollment {
+  id          Int                 @id @default(autoincrement())
+  sheetsId    String              @unique @map("sheets_id")
+  personId    Int                 @map("person_id")
+  classCode   String              @map("class_code")
+  subject     String
+  className   String              @map("class_name")
+  cohort      Int?                @db.SmallInt          // 年次（如 105, 115），從班別括號解析
+  status      String              @default("active")
+  startYear   Int?                @map("start_year")
+  endYear     Int?                @map("end_year")
+  person       Person              @relation(fields: [personId], references: [id], onDelete: Cascade)
+  invoices     Invoice[]
+  attendances  MonthlyAttendance[]
+  payments     Payment[]
+  semesterFees SemesterFee[]
+
+  @@index([personId])
+  @@map("enrollments")
+}
+
+model MonthlyAttendance {
+  id           Int        @id @default(autoincrement())
+  enrollmentId Int        @map("enrollment_id")
+  year         Int        @db.SmallInt
+  month        Int        @db.SmallInt
+  days         Int[]
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+  enrollment   Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+
+  @@unique([enrollmentId, year, month])
+  @@index([enrollmentId])
+  @@index([year, month])
+  @@map("monthly_attendance")
+}
+
+model Class {
+  id           Int        @id @default(autoincrement())
+  code         String     @unique
+  name         String
+  subject      String
+  schedule     String?
+  rateConfigId Int        @map("rate_config_id")
+  rateConfig   RateConfig @relation(fields: [rateConfigId], references: [id])
+
+  @@map("classes")
+}
+
+model RateConfig {
+  id                 Int     @id @default(autoincrement())
+  name               String  @unique
+  fullSessionFee     Int     @map("full_session_fee")
+  halfSessionFee     Int     @map("half_session_fee")
+  hoursPerSession    Float   @default(3.0) @map("hours_per_session")
+  settlementSessions Int     @default(5) @map("settlement_sessions")
+  classes            Class[]
+
+  @@map("rate_configs")
+}
+
+model Invoice {
+  id           Int        @id @default(autoincrement())
+  serialNumber String     @unique @map("serial_number")
+  hashCode     String     @map("hash_code")
+  enrollmentId Int        @map("enrollment_id")
+  startDate    DateTime   @map("start_date") @db.Date
+  endDate      DateTime   @map("end_date") @db.Date
+  amount       Int
+  yyCount      Int        @map("yy_count")
+  yCount       Int        @map("y_count")
+  totalY       Int        @map("total_y")
+  records      Json?
+  pdfPath      String?    @map("pdf_path")
+  barcodeData  String?    @map("barcode_data")
+  issuedDate   DateTime?  @map("issued_date") @db.Date   // draft→issued 時填入
+  paidDate     DateTime?  @map("paid_date") @db.Date     // issued→paid 時填入
+  status       String     @default("draft")              // draft / issued / paid
+  sheetPushed  Boolean    @default(false) @map("sheet_pushed")  // 推送到 Google Sheets 且驗證成功
+  createdAt    DateTime   @default(now()) @map("created_at")
+  note         String?
+  enrollment   Enrollment  @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  payments     Payment[]
+  semesterFees SemesterFee[]
+
+  @@index([enrollmentId])
+  @@map("invoices")
+}
+
+model AuditLog {
+  id         Int      @id @default(autoincrement())
+  tableName  String   @map("table_name")
+  recordId   Int      @map("record_id")
+  action     String
+  beforeData Json?    @map("before_data")
+  afterData  Json?    @map("after_data")
+  changedBy  String?  @map("changed_by")
+  reason     String?
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([tableName, recordId])
+  @@index([createdAt])
+  @@map("audit_log")
+}
+
+model Payment {
+  id           Int        @id @default(autoincrement())
+  enrollmentId Int        @map("enrollment_id")
+  invoiceId    Int?       @map("invoice_id")
+  amount       Int
+  paymentDate  DateTime   @map("payment_date") @db.Date
+  method       String
+  transferRef  String?    @map("transfer_ref")
+  notes        String?
+  createdAt    DateTime   @default(now()) @map("created_at")
+  enrollment   Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  invoice      Invoice?   @relation(fields: [invoiceId], references: [id])
+
+  @@index([enrollmentId])
+  @@index([invoiceId])
+  @@map("payments")
+}
+
+model SemesterFee {
+  id            Int        @id @default(autoincrement())
+  enrollmentId  Int        @map("enrollment_id")
+  academicYear  Int        @map("academic_year") @db.SmallInt    // 學年（如 111, 112）
+  semester      Int        @db.SmallInt                          // 1=上學期, 2=下學期
+  amount        Int                                              // 金額（如 1000）
+  feeDate       DateTime?  @map("fee_date") @db.Date             // 收費日期（Excel serial → Date）
+  invoiceId     Int?       @map("invoice_id")                    // 搭配的收費單（nullable）
+  status        String     @default("pending")                   // pending / paid
+  createdAt     DateTime   @default(now()) @map("created_at")
+  enrollment    Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  invoice       Invoice?   @relation(fields: [invoiceId], references: [id])
+
+  @@unique([enrollmentId, academicYear, semester])
+  @@index([enrollmentId])
+  @@index([academicYear])
+  @@map("semester_fees")
+}
