@@ -7,7 +7,7 @@ node_modules
 *.md
 docs/
 scripts/
-Stamp/
+# Stamp/ 不排除 — Dockerfile COPY stamps/ 需要
 *.json.bak
 generated_invoices_latex/
 coverage/
