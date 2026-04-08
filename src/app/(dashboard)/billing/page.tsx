@@ -4,7 +4,7 @@ import { extractBillableDates, formatDateUTC } from '@/lib/attendance-utils';
 import { calculateBilling } from '@/lib/billing-engine';
 import { resolveAllRateConfigs } from '@/lib/rate-resolver';
 import { readSheet } from '@/lib/sheets';
-import BillingTable, { type StudentRow, type DraftInvoice } from './BillingTable';
+import BillingTable, { type StudentRow } from './BillingTable';
 
 export default async function BillingPage() {
   const now = new Date();
@@ -28,34 +28,44 @@ export default async function BillingPage() {
     orderBy: [{ classCode: 'asc' }, { sheetsId: 'asc' }],
   });
 
-  // 2. 載入所有 pending 收費單（已推 Sheets，待收費）
-  const draftInvoices = await prisma.invoice.findMany({
-    where: { status: 'pending' },
+  // 2. 載入 pending + archived 收費單
+  const allInvoices = await prisma.invoice.findMany({
+    where: { status: { in: ['pending', 'archived'] } },
     include: {
       enrollment: {
         include: { person: { select: { name: true } } },
       },
     },
-    orderBy: [{ enrollment: { sheetsId: 'asc' } }],
+    orderBy: [{ startDate: 'asc' }],
   });
 
-  // 按 sheetsId 排序
-  draftInvoices.sort((a, b) => parseInt(a.enrollment.sheetsId) - parseInt(b.enrollment.sheetsId));
+  // 分組函式
+  function groupByStudent(invoices: typeof allInvoices) {
+    const map = new Map<string, {
+      sheetsId: string; name: string; className: string;
+      invoices: { id: number; serialNumber: string; amount: number; startDate: string; endDate: string; dates: string[]; createdAt: string }[];
+    }>();
+    for (const inv of invoices) {
+      const sid = inv.enrollment.sheetsId;
+      if (!map.has(sid)) {
+        map.set(sid, { sheetsId: sid, name: inv.enrollment.person.name, className: inv.enrollment.className, invoices: [] });
+      }
+      const records = (inv.records || []) as { date: string }[];
+      map.get(sid)!.invoices.push({
+        id: inv.id, serialNumber: inv.serialNumber, amount: inv.amount,
+        startDate: inv.startDate.toISOString().slice(0, 10),
+        endDate: inv.endDate.toISOString().slice(0, 10),
+        dates: records.map(r => r.date.replace(/^\d{4}\//, '')),
+        createdAt: inv.createdAt.toISOString().slice(0, 10),
+      });
+    }
+    return [...map.values()].sort((a, b) => parseInt(a.sheetsId) - parseInt(b.sheetsId));
+  }
 
-  const drafts: DraftInvoice[] = draftInvoices.map(inv => {
-    const records = (inv.records || []) as { date: string }[];
-    const dates = records.map(r => r.date.replace(/^\d{4}\//, ''));
-    return {
-      id: inv.id,
-      sheetsId: inv.enrollment.sheetsId,
-      name: inv.enrollment.person.name,
-      className: inv.enrollment.className,
-      serialNumber: inv.serialNumber,
-      amount: inv.amount,
-      dates,
-      createdAt: inv.createdAt.toISOString().slice(0, 10),
-    };
-  });
+  const pendingInvoices = allInvoices.filter(i => i.status === 'pending');
+  const archivedInvoices = allInvoices.filter(i => i.status === 'archived');
+  const pendingGroups = groupByStudent(pendingInvoices);
+  const archivedGroups = groupByStudent(archivedInvoices);
 
   // 3. 批次解析費率
   const rateMap = await resolveAllRateConfigs();
@@ -147,7 +157,10 @@ export default async function BillingPage() {
     <BillingTable
       rows={rows}
       readyCount={readyCount}
-      draftInvoices={drafts}
+      pendingGroups={pendingGroups}
+      archivedGroups={archivedGroups}
+      pendingCount={pendingInvoices.length}
+      archivedCount={archivedInvoices.length}
       currentYear={currentYear}
     />
   );
