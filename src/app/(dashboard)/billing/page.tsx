@@ -3,7 +3,7 @@ import { calendarYearToAcademicYear, getYearConfig } from '@/lib/year-config';
 import { extractBillableDates, formatDateUTC } from '@/lib/attendance-utils';
 import { calculateBilling } from '@/lib/billing-engine';
 import { resolveAllRateConfigs } from '@/lib/rate-resolver';
-import { createSheetsApi } from '@/lib/script-init';
+import { readSheet } from '@/lib/sheets';
 import BillingTable, { type StudentRow, type DraftInvoice } from './BillingTable';
 
 export default async function BillingPage() {
@@ -63,18 +63,13 @@ export default async function BillingPage() {
   // 3b. 讀 Sheets 學費收支總表 P 欄（應製單數），作為 canGenerate 的真理來源
   const sheetsPMap = new Map<string, number>();
   try {
-    const sheets = await createSheetsApi();
     const config = getYearConfig(currentYear);
     if (config) {
-      const res = await sheets.spreadsheets.values.get({
-        spreadsheetId: config.spreadsheetId,
-        range: "'學費收支總表'!A2:P300",
-        valueRenderOption: 'FORMATTED_VALUE',
-      });
-      for (const row of (res.data.values || [])) {
+      const rows = await readSheet("'學費收支總表'!A2:P300", config.spreadsheetId);
+      for (const row of rows) {
         const id = String(row[0] || '');
         const P = parseInt(String(row[15] || '0'));
-        if (id && P > 0) sheetsPMap.set(id, P);
+        if (id) sheetsPMap.set(id, P);  // 包含 P=0 的，這樣 fallback 不會誤判
       }
     }
   } catch (e) {
@@ -107,9 +102,12 @@ export default async function BillingPage() {
         currentY = billing.totalY;
 
         // canGenerate 以 Sheets P 欄為準（真理來源）
-        // 如果讀不到 Sheets，fallback 用 billing engine 判斷
-        const sheetsP = sheetsPMap.get(e.sheetsId);
-        canGenerate = sheetsP !== undefined ? sheetsP > 0 : billing.canGenerate;
+        // sheetsPMap 有此學生 → 用 Sheets P 值；沒有（Sheets 讀取失敗）→ fallback billing engine
+        if (sheetsPMap.has(e.sheetsId)) {
+          canGenerate = (sheetsPMap.get(e.sheetsId) ?? 0) > 0;
+        } else {
+          canGenerate = billing.canGenerate;
+        }
 
         if (billing.records.length > 0) {
           billingDates = billing.records.map(r => r.date.replace(/^\d{4}\//, ''));
