@@ -4,9 +4,9 @@ import Link from 'next/link';
 import { PayButton } from './PayButton';
 
 export default async function PendingPage() {
-  // 查詢所有 draft 狀態的收費單
+  // 查詢所有 pending 狀態的收費單（已推 Sheets，待收費）
   const invoices = await prisma.invoice.findMany({
-    where: { status: 'draft' },
+    where: { status: 'pending' },
     include: {
       enrollment: {
         include: { person: { select: { name: true } } },

@@ -27,9 +27,9 @@ export default async function BillingPage() {
     orderBy: [{ classCode: 'asc' }, { sheetsId: 'asc' }],
   });
 
-  // 2. 載入所有 draft 收費單（含完整資料供銷帳用）
+  // 2. 載入所有 pending 收費單（已推 Sheets，待收費）
   const draftInvoices = await prisma.invoice.findMany({
-    where: { status: 'draft' },
+    where: { status: 'pending' },
     include: {
       enrollment: {
         include: { person: { select: { name: true } } },
