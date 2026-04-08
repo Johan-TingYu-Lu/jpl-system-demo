@@ -88,6 +88,7 @@ export default function BillingTable({
   // ── Accordion state ──
   const [openIds, setOpenIds] = useState<Set<string>>(new Set());
   const [archiving, setArchiving] = useState<Set<string>>(new Set());
+  const [unarchiving, setUnarchiving] = useState<Set<string>>(new Set());
 
   function toggleAccordion(id: string) {
     setOpenIds(prev => {
@@ -147,6 +148,22 @@ export default function BillingTable({
       } catch { alert('網路錯誤'); break; }
     }
     setArchiving(prev => { const n = new Set(prev); n.delete(student.sheetsId); return n; });
+    router.refresh();
+  }
+
+  // ── Archived tab: unarchive whole student ──
+  async function handleUnarchive(student: StudentGroup) {
+    if (!confirm(`取消封存 ${student.name}（${student.sheetsId}）的 ${student.invoices.length} 張收費單？\n\n將回到「未銷帳」分頁。`)) return;
+
+    setUnarchiving(prev => new Set(prev).add(student.sheetsId));
+    for (const inv of student.invoices) {
+      try {
+        const res = await fetch(`/api/invoices/${inv.id}/unarchive`, { method: 'POST' });
+        const data = await res.json();
+        if (!data.success) { alert(`取消封存 ${inv.serialNumber} 失敗: ${data.error}`); break; }
+      } catch { alert('網路錯誤'); break; }
+    }
+    setUnarchiving(prev => { const n = new Set(prev); n.delete(student.sheetsId); return n; });
     router.refresh();
   }
 
@@ -253,6 +270,7 @@ export default function BillingTable({
         {groups.map(student => {
           const isOpen = openIds.has(`${mode}-${student.sheetsId}`);
           const isArchivingThis = archiving.has(student.sheetsId);
+          const isUnarchivingThis = unarchiving.has(student.sheetsId);
           const total = student.invoices.reduce((s, i) => s + i.amount, 0);
 
           return (
@@ -276,6 +294,15 @@ export default function BillingTable({
                   >
                     <Archive className="w-3.5 h-3.5" />
                     {isArchivingThis ? '封存中...' : '封存'}
+                  </button>
+                )}
+                {mode === 'archived' && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); handleUnarchive(student); }}
+                    disabled={isUnarchivingThis}
+                    className="flex items-center gap-1 text-xs px-3 py-1.5 rounded border border-blue-300 text-blue-500 hover:bg-blue-50 hover:border-blue-400 disabled:opacity-50 transition-colors"
+                  >
+                    {isUnarchivingThis ? '恢復中...' : '↩ 取消封存'}
                   </button>
                 )}
               </div>
