@@ -1,0 +1,20 @@
+# Cloud Build ignore — 比 .gitignore 少排除 stamps/（Dockerfile 需要）
+node_modules/
+.next/
+.env*
+.git/
+generated_invoices_latex/
+generated_invoices/
+coverage/
+.vscode/
+.claude/
+*.md
+docs/
+scripts/
+src/scripts/
+reports/
+*.txt
+*.xlsx
+full-detail-19.*
+audit_plan*.txt
+cloud_run_env.json
