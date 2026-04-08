@@ -1,8 +1,9 @@
 import prisma from '@/lib/prisma';
-import { calendarYearToAcademicYear } from '@/lib/year-config';
+import { calendarYearToAcademicYear, getYearConfig } from '@/lib/year-config';
 import { extractBillableDates, formatDateUTC } from '@/lib/attendance-utils';
 import { calculateBilling } from '@/lib/billing-engine';
 import { resolveAllRateConfigs } from '@/lib/rate-resolver';
+import { createSheetsApi } from '@/lib/script-init';
 import BillingTable, { type StudentRow, type DraftInvoice } from './BillingTable';
 
 export default async function BillingPage() {
@@ -59,6 +60,27 @@ export default async function BillingPage() {
   // 3. 批次解析費率
   const rateMap = await resolveAllRateConfigs();
 
+  // 3b. 讀 Sheets 學費收支總表 P 欄（應製單數），作為 canGenerate 的真理來源
+  const sheetsPMap = new Map<string, number>();
+  try {
+    const sheets = await createSheetsApi();
+    const config = getYearConfig(currentYear);
+    if (config) {
+      const res = await sheets.spreadsheets.values.get({
+        spreadsheetId: config.spreadsheetId,
+        range: "'學費收支總表'!A2:P300",
+        valueRenderOption: 'FORMATTED_VALUE',
+      });
+      for (const row of (res.data.values || [])) {
+        const id = String(row[0] || '');
+        const P = parseInt(String(row[15] || '0'));
+        if (id && P > 0) sheetsPMap.set(id, P);
+      }
+    }
+  } catch (e) {
+    console.error('[billing] Failed to read Sheets P column, falling back to DB:', e);
+  }
+
   // 4. 計算每位學生的 Y 進度（僅用於「未生成」tab）
   const rows: StudentRow[] = enrollments.map(e => {
     const latest = e.invoices[0];
@@ -83,12 +105,11 @@ export default async function BillingPage() {
       if (filtered.length > 0) {
         const billing = calculateBilling(filtered, rateConfig, 'normal');
         currentY = billing.totalY;
-        canGenerate = billing.canGenerate;
 
-        // 如果該學生已有 pending（待收）invoice，先收完再開新的
-        if (canGenerate && latest?.status === 'pending') {
-          canGenerate = false;
-        }
+        // canGenerate 以 Sheets P 欄為準（真理來源）
+        // 如果讀不到 Sheets，fallback 用 billing engine 判斷
+        const sheetsP = sheetsPMap.get(e.sheetsId);
+        canGenerate = sheetsP !== undefined ? sheetsP > 0 : billing.canGenerate;
 
         if (billing.records.length > 0) {
           billingDates = billing.records.map(r => r.date.replace(/^\d{4}\//, ''));
