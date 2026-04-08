@@ -85,6 +85,11 @@ export default async function BillingPage() {
         currentY = billing.totalY;
         canGenerate = billing.canGenerate;
 
+        // 如果該學生已有 pending（待收）invoice，先收完再開新的
+        if (canGenerate && latest?.status === 'pending') {
+          canGenerate = false;
+        }
+
         if (billing.records.length > 0) {
           billingDates = billing.records.map(r => r.date.replace(/^\d{4}\//, ''));
           estimatedFee = billing.totalFee;
