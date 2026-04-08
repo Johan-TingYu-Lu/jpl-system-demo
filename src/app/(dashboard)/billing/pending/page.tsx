@@ -2,6 +2,7 @@ import prisma from '@/lib/prisma';
 import { Banknote } from 'lucide-react';
 import Link from 'next/link';
 import { PayButton } from './PayButton';
+import { CancelButton } from './CancelButton';
 
 export default async function PendingPage() {
   // 查詢所有 pending 狀態的收費單（已推 Sheets，待收費）
@@ -79,7 +80,10 @@ export default async function PendingPage() {
                         {inv.createdAt.toISOString().slice(0, 10)}
                       </td>
                       <td className="px-4 py-3 text-center">
-                        <PayButton invoiceId={inv.id} serial={inv.serialNumber} amount={inv.amount} />
+                        <div className="flex items-center justify-center gap-2">
+                          <PayButton invoiceId={inv.id} serial={inv.serialNumber} amount={inv.amount} />
+                          <CancelButton invoiceId={inv.id} serial={inv.serialNumber} name={inv.enrollment.person.name} />
+                        </div>
                       </td>
                     </tr>
                   );
