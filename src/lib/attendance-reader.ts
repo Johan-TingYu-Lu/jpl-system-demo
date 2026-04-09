@@ -59,6 +59,7 @@ export async function getLastInvoiceEndDate(enrollmentId: number): Promise<Date 
     return new Date(Date.UTC(y, m - 1, d));
   }
 
-  // fallback: 用 endDate
+  // fallback: 用 endDate（不應發生 — 所有 invoice 都應有 records）
+  console.warn(`[getLastInvoiceEndDate] Invoice for enrollment ${enrollmentId} has empty records, using endDate as fallback`);
   return lastInvoice.endDate;
 }
