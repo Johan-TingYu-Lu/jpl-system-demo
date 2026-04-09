@@ -36,14 +36,29 @@ export async function getBillableAttendance(
 }
 
 /**
- * Get the last invoice end date for an enrollment,
+ * Get the last billed date for an enrollment (FLAG),
  * to determine where billing should resume.
+ *
+ * 優先用 records 裡的最後一天（實際上課日），
+ * 因為 Sheets endDate 可能比最後上課日早一天。
+ * 若 records 為空（SYNC invoice），fallback 用 endDate。
  */
 export async function getLastInvoiceEndDate(enrollmentId: number): Promise<Date | null> {
   const lastInvoice = await prisma.invoice.findFirst({
     where: { enrollmentId },
     orderBy: { endDate: 'desc' },
-    select: { endDate: true },
+    select: { endDate: true, records: true },
   });
-  return lastInvoice?.endDate ?? null;
+  if (!lastInvoice) return null;
+
+  // 從 records 取最後一天
+  const records = lastInvoice.records as { date: string }[] | null;
+  if (records && Array.isArray(records) && records.length > 0) {
+    const lastRecordDate = records[records.length - 1].date; // "2026/03/10"
+    const [y, m, d] = lastRecordDate.split('/').map(Number);
+    return new Date(Date.UTC(y, m - 1, d));
+  }
+
+  // fallback: 用 endDate
+  return lastInvoice.endDate;
 }

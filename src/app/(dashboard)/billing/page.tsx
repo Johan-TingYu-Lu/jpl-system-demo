@@ -18,7 +18,7 @@ export default async function BillingPage() {
       invoices: {
         orderBy: { endDate: 'desc' },
         take: 1,
-        select: { id: true, serialNumber: true, amount: true, status: true, endDate: true },
+        select: { id: true, serialNumber: true, amount: true, status: true, endDate: true, records: true },
       },
       attendances: {
         orderBy: [{ year: 'asc' }, { month: 'asc' }],
@@ -89,7 +89,16 @@ export default async function BillingPage() {
   // 4. 計算每位學生的 Y 進度（僅用於「未生成」tab）
   const rows: StudentRow[] = enrollments.map(e => {
     const latest = e.invoices[0];
-    const lastEndDate = latest?.endDate ?? null;
+    // FLAG: 優先用 records 最後一天，fallback 用 endDate
+    let lastEndDate: Date | null = latest?.endDate ?? null;
+    if (latest) {
+      const recs = latest.records as { date: string }[] | null;
+      if (recs && Array.isArray(recs) && recs.length > 0) {
+        const lastRec = recs[recs.length - 1].date; // "2026/03/10"
+        const [y, m, d] = lastRec.split('/').map(Number);
+        lastEndDate = new Date(Date.UTC(y, m - 1, d));
+      }
+    }
     const resolved = rateMap.get(e.sheetsId);
     const rateConfig = resolved?.config;
 
