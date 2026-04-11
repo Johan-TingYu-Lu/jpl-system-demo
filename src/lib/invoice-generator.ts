@@ -207,14 +207,24 @@ export async function generateAllInvoices(): Promise<{
 
   const generated: GenerateInvoiceOutput[] = [];
   let skipped = 0;
+  let pushed = 0;
+  let pushFailed = 0;
 
   for (const e of enrollments) {
     // Keep generating invoices for this enrollment until it can't generate more
     let keepGoing = true;
     while (keepGoing) {
       const result = await generateInvoice({ enrollmentId: e.id, mode: 'normal' });
-      if (result.success) {
+      if (result.success && result.invoiceId) {
         generated.push(result);
+        // 自動推送到 Sheets: draft → pending
+        const pushResult = await pushInvoiceToSheets(result.invoiceId);
+        if (pushResult.success && pushResult.verified) {
+          pushed++;
+        } else {
+          pushFailed++;
+          console.warn(`[generateAllInvoices] Push failed for ${result.serialNumber}: ${pushResult.error}`);
+        }
       } else {
         keepGoing = false;
         skipped++;
@@ -222,7 +232,7 @@ export async function generateAllInvoices(): Promise<{
     }
   }
 
-  return { generated, skipped, billingSync };
+  return { generated, skipped, billingSync, pushed, pushFailed };
 }
 
 /**

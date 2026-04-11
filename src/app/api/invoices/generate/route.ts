@@ -4,7 +4,7 @@
  */
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { generateInvoice, generateAllInvoices } from '@/lib/invoice-generator';
+import { generateInvoice, generateAllInvoices, pushInvoiceToSheets } from '@/lib/invoice-generator';
 
 export async function POST(request: Request) {
   try {
@@ -21,6 +21,8 @@ export async function POST(request: Request) {
         success: true,
         generated: result.generated.length,
         skipped: result.skipped,
+        pushed: result.pushed ?? 0,
+        pushFailed: result.pushFailed ?? 0,
         results: result.generated,
       });
     }
@@ -34,7 +36,18 @@ export async function POST(request: Request) {
     if (!targetId) return NextResponse.json({ error: 'enrollmentId or sheetsId required' }, { status: 400 });
 
     const result = await generateInvoice({ enrollmentId: targetId, mode: 'normal' });
-    return NextResponse.json(result, { status: result.success ? 200 : 422 });
+
+    // 單筆生成後也自動推送到 Sheets
+    let pushResult = null;
+    if (result.success && result.invoiceId) {
+      pushResult = await pushInvoiceToSheets(result.invoiceId);
+    }
+
+    return NextResponse.json({
+      ...result,
+      pushed: pushResult?.success && pushResult?.verified,
+      pushError: pushResult?.error,
+    }, { status: result.success ? 200 : 422 });
   } catch (error) {
     return NextResponse.json({ error: String(error) }, { status: 500 });
   }

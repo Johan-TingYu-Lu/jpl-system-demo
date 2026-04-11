@@ -4,8 +4,8 @@
  * 功能：
  * 1. pushBillingDates()  — 生成收費單後，寫入計費日期表（起始/結束日期）
  * 2. pushPayment()       — 銷帳後，寫入繳費金額表 + 繳費日期表
- * 3. revertBillingDates() — 復原時，清除計費日期表最後一筆
- * 4. revertPayment()      — 復原銷帳時，清除繳費金額表 + 繳費日期表最後一筆
+ * 3. revertBillingDates() — TODO: 待重寫
+ * 4. revertPayment()      — TODO: 待重寫
  *
  * 每個推送函式都包含：
  * - 合併寫入（一次 API call 寫多格，確保原子性）
@@ -172,10 +172,23 @@ export async function pushBillingDates(params: {
   const startCol = fmt.datePairsStartCol + pairIndex * 2;
   const endCol = startCol + 1;
 
+  const range = `'${sheetName}'!${colToLetter(startCol)}${row}:${colToLetter(endCol)}${row}`;
+
+  // 安全檢查：目標格不能已有資料
+  const existing = await readSheet(range, config.spreadsheetId);
+  const existingRow = existing[0] ?? [];
+  const hasData = existingRow.some((cell: unknown) => cell !== undefined && cell !== null && cell !== '');
+  if (hasData) {
+    return {
+      success: false,
+      verified: false,
+      error: `目標格已有資料 (${range}): ${JSON.stringify(existingRow)}，拒絕覆寫`,
+    };
+  }
+
   const startSerial = dateToSerial(params.startDate);
   const endSerial = dateToSerial(params.endDate);
 
-  const range = `'${sheetName}'!${colToLetter(startCol)}${row}:${colToLetter(endCol)}${row}`;
   return writeAndVerify(range, [[startSerial, endSerial]], config.spreadsheetId);
 }
 
@@ -204,6 +217,14 @@ export async function pushPayment(params: {
   const amtRow = amtFound.rowIndex + 1;
   const amtCol = amtFmt.amountsStartCol + (params.paymentCount - 1);
   const amtRange = `'${amtSheet}'!${colToLetter(amtCol)}${amtRow}`;
+
+  // 安全檢查：目標格不能已有資料
+  const existingAmt = await readSheet(amtRange, spreadsheetId);
+  const existingAmtVal = existingAmt[0]?.[0];
+  if (existingAmtVal !== undefined && existingAmtVal !== null && existingAmtVal !== '') {
+    return { success: false, verified: false, error: `目標格已有資料 (${amtRange}): ${existingAmtVal}，拒絕覆寫` };
+  }
+
   const amtResult = await writeAndVerify(amtRange, [[params.amount]], spreadsheetId);
   if (!amtResult.success) return amtResult;
 
@@ -216,6 +237,14 @@ export async function pushPayment(params: {
   const dateRow = dateFound.rowIndex + 1;
   const dateCol = dateFmt.datesStartCol + (params.paymentCount - 1);
   const dateRange = `'${dateSheet}'!${colToLetter(dateCol)}${dateRow}`;
+
+  // 安全檢查：目標格不能已有資料
+  const existingDate = await readSheet(dateRange, spreadsheetId);
+  const existingDateVal = existingDate[0]?.[0];
+  if (existingDateVal !== undefined && existingDateVal !== null && existingDateVal !== '') {
+    return { success: false, verified: false, error: `目標格已有資料 (${dateRange}): ${existingDateVal}，拒絕覆寫` };
+  }
+
   const paySerial = dateToSerial(params.paymentDate);
   const dateResult = await writeAndVerify(dateRange, [[paySerial]], spreadsheetId);
 
@@ -228,76 +257,12 @@ export async function pushPayment(params: {
 }
 
 // ============================================================================
-// 3. Revert billing dates (復原收費單)
+// 3. Revert billing dates — TODO: 待重寫
 // ============================================================================
 
-export async function revertBillingDates(params: {
-  sheetsId: string;
-  academicYear: number;
-  previousCount: number;
-}): Promise<PushResult> {
-  const config = getYearConfig(params.academicYear);
-  if (!config) return { success: false, verified: false, error: `No config for year ${params.academicYear}` };
-
-  const fmt = config.billingDate;
-  const sheetName = '計費日期表';
-
-  const found = await findStudentRow(sheetName, params.sheetsId, config.spreadsheetId, fmt.idCol);
-  if (!found) return { success: false, verified: false, error: `Student ${params.sheetsId} not found in ${sheetName}` };
-
-  const row = found.rowIndex + 1;
-
-  // 合併清除：一次寫入空值到連續兩格
-  const pairIndex = params.previousCount;
-  const startCol = fmt.datePairsStartCol + pairIndex * 2;
-  const endCol = startCol + 1;
-
-  const range = `'${sheetName}'!${colToLetter(startCol)}${row}:${colToLetter(endCol)}${row}`;
-  return writeAndVerify(range, [['', '']], config.spreadsheetId);
-}
-
 // ============================================================================
-// 4. Revert payment (復原銷帳)
+// 4. Revert payment — TODO: 待重寫
 // ============================================================================
-
-export async function revertPayment(params: {
-  sheetsId: string;
-  academicYear: number;
-  previousCount: number;
-}): Promise<PushResult> {
-  const config = getYearConfig(params.academicYear);
-  if (!config) return { success: false, verified: false, error: `No config for year ${params.academicYear}` };
-
-  const spreadsheetId = config.spreadsheetId;
-
-  // --- 繳費金額表 ---
-  const amtFmt = config.feeAmount;
-  const amtSheet = '繳費金額表';
-  const amtFound = await findStudentRow(amtSheet, params.sheetsId, spreadsheetId, amtFmt.idCol);
-  let amtVerified = true;
-  if (amtFound) {
-    const amtRow = amtFound.rowIndex + 1;
-    const amtCol = amtFmt.amountsStartCol + params.previousCount;
-    const amtRange = `'${amtSheet}'!${colToLetter(amtCol)}${amtRow}`;
-    const amtResult = await writeAndVerify(amtRange, [['']], spreadsheetId);
-    amtVerified = amtResult.verified;
-  }
-
-  // --- 繳費日期表 ---
-  const dateFmt = config.paymentDate;
-  const dateSheet = '繳費日期表';
-  const dateFound = await findStudentRow(dateSheet, params.sheetsId, spreadsheetId, dateFmt.idCol);
-  let dateVerified = true;
-  if (dateFound) {
-    const dateRow = dateFound.rowIndex + 1;
-    const dateCol = dateFmt.datesStartCol + params.previousCount;
-    const dateRange = `'${dateSheet}'!${colToLetter(dateCol)}${dateRow}`;
-    const dateResult = await writeAndVerify(dateRange, [['']], spreadsheetId);
-    dateVerified = dateResult.verified;
-  }
-
-  return { success: true, verified: amtVerified && dateVerified };
-}
 
 // ============================================================================
 // 5. Add new student to master sheet

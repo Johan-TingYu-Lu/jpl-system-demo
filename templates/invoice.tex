@@ -157,7 +157,8 @@
 \end{center}
 
 % ============================================================================
-% Page 2: Notes (top) + QR Code (bottom, aligns with signature area back)
+% Page 2: Notes (top half, back of 收費單) + QR Code (bottom half, back of 繳費收據)
+% 正面虛線 = 背面實線，撕開後 QR Code 在繳費收據背面（老師留存那張）
 % ============================================================================
 \newpage
 
@@ -177,19 +178,21 @@
 
 {\large 若有意以電子支付或匯款當期費用，亦可透過 LINE PAY、Taiwan Pay 等支付工具。謝謝您。}
 
-\vspace{10mm}
+\vfill
 
+% --- 切割線（對齊正面虛線） ---
 \begin{center}
-\rule{0.6\textwidth}{0.4pt}
+\begin{tikzpicture}
+\draw[gray, thick] (0,0) -- (\textwidth-1cm,0);
+\end{tikzpicture}
 \end{center}
 
-\vspace{10mm}
+\vspace{2cm}
 
 \begin{center}
 \qrcode[height=3.5cm]{\qrUrl}
-
-\vspace{3mm}
-{\small 掃描 QR Code 銷帳}
 \end{center}
+
+\vfill
 
 \end{document}
