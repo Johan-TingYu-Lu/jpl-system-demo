@@ -196,6 +196,8 @@ export async function generateAllInvoices(): Promise<{
   generated: GenerateInvoiceOutput[];
   skipped: number;
   billingSync: import('./billing-history-importer').ImportResult | null;
+  pushed: number;
+  pushFailed: number;
 }> {
   // 注意：不再自動 pullBillingHistory()。呼叫端應先 sync 再 generate。
   const billingSync: import('./billing-history-importer').ImportResult | null = null;
