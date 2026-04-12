@@ -51,12 +51,15 @@ export async function getLastInvoiceEndDate(enrollmentId: number): Promise<Date 
   });
   if (!lastInvoice) return null;
 
-  // 從 records 取最後一天
+  // 從 records 取最後一天（實際上課日），取 endDate 與 lastRecordDate 中較大的
+  // 防止 endDate < lastRecordDate 導致重複計費
   const records = lastInvoice.records as { date: string }[] | null;
   if (records && Array.isArray(records) && records.length > 0) {
     const lastRecordDate = records[records.length - 1].date; // "2026/03/10"
     const [y, m, d] = lastRecordDate.split('/').map(Number);
-    return new Date(Date.UTC(y, m - 1, d));
+    const recordDate = new Date(Date.UTC(y, m - 1, d));
+    // 取兩者中較晚的，確保不會漏算也不會重複
+    return recordDate > lastInvoice.endDate ? recordDate : lastInvoice.endDate;
   }
 
   // fallback: 用 endDate（不應發生 — 所有 invoice 都應有 records）
