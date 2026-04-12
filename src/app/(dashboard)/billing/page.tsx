@@ -1,9 +1,8 @@
 import prisma from '@/lib/prisma';
-import { calendarYearToAcademicYear, getYearConfig } from '@/lib/year-config';
+import { calendarYearToAcademicYear } from '@/lib/year-config';
 import { extractBillableDates, formatDateUTC } from '@/lib/attendance-utils';
 import { calculateBilling } from '@/lib/billing-engine';
 import { resolveAllRateConfigs } from '@/lib/rate-resolver';
-import { readSheet } from '@/lib/sheets';
 import BillingTable, { type StudentRow } from './BillingTable';
 
 export default async function BillingPage() {
@@ -70,21 +69,7 @@ export default async function BillingPage() {
   // 3. 批次解析費率
   const rateMap = await resolveAllRateConfigs();
 
-  // 3b. 讀 Sheets 學費收支總表 P 欄（應製單數），作為 canGenerate 的真理來源
-  const sheetsPMap = new Map<string, number>();
-  try {
-    const config = getYearConfig(currentYear);
-    if (config) {
-      const rows = await readSheet("'學費收支總表'!A2:P300", config.spreadsheetId);
-      for (const row of rows) {
-        const id = String(row[0] || '');
-        const P = parseInt(String(row[15] || '0'));
-        if (id) sheetsPMap.set(id, P);  // 包含 P=0 的，這樣 fallback 不會誤判
-      }
-    }
-  } catch (e) {
-    console.error('[billing] Failed to read Sheets P column, falling back to DB:', e);
-  }
+  // 3b. canGenerate 統一由 billing-engine 計算，不再依賴 Sheets P 欄
 
   // 4. 計算每位學生的 Y 進度（僅用於「未生成」tab）
   const rows: StudentRow[] = enrollments.map(e => {
@@ -120,13 +105,7 @@ export default async function BillingPage() {
         const billing = calculateBilling(filtered, rateConfig, 'normal');
         currentY = billing.totalY;
 
-        // canGenerate 以 Sheets P 欄為準（真理來源）
-        // sheetsPMap 有此學生 → 用 Sheets P 值；沒有（Sheets 讀取失敗）→ fallback billing engine
-        if (sheetsPMap.has(e.sheetsId)) {
-          canGenerate = (sheetsPMap.get(e.sheetsId) ?? 0) > 0;
-        } else {
-          canGenerate = billing.canGenerate;
-        }
+        canGenerate = billing.canGenerate;
 
         if (billing.records.length > 0) {
           billingDates = billing.records.map(r => r.date.replace(/^\d{4}\//, ''));
