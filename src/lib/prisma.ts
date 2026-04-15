@@ -14,10 +14,8 @@ const globalForPrisma = globalThis as unknown as {
 function createPrismaClient() {
   const adapter = new PrismaPg({
     connectionString,
-    options: {
-      ssl: { rejectUnauthorized: false },
-    } as any,
-  });
+    ssl: { rejectUnauthorized: false },
+  } as any);
   return new PrismaClient({ adapter });
 }
 
