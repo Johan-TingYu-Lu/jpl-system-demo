@@ -71,6 +71,14 @@ export async function POST(
     pushOk = pushResult.success && pushResult.verified;
   } catch { /* push failure is non-fatal */ }
 
+  // 6. If push failed, still upgrade to pending so it shows in the UI
+  if (!pushOk) {
+    await prisma.invoice.update({
+      where: { id: genResult.invoiceId },
+      data: { status: 'pending' },
+    });
+  }
+
   return NextResponse.json({
     success: true,
     deleted: oldSerial,
