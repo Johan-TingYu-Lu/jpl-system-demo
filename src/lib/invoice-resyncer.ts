@@ -92,7 +92,7 @@ export async function resyncInvoice(input: ResyncInput): Promise<ResyncResult> {
   const newAmount = newRecords.reduce((sum, r) => sum + r.fee, 0);
 
   // 6. Compute diffs
-  const oldRecords = (invoice.records as BilledRecord[]) || [];
+  const oldRecords = (invoice.records as unknown as BilledRecord[]) || [];
   const oldDates = oldRecords.map(r => r.date).join(', ');
   const newDates = newRecords.map(r => r.date).join(', ');
 
