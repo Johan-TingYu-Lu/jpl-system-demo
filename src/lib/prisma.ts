@@ -16,7 +16,7 @@ function createPrismaClient() {
     connectionString,
     options: {
       ssl: { rejectUnauthorized: false },
-    },
+    } as any,
   });
   return new PrismaClient({ adapter });
 }
