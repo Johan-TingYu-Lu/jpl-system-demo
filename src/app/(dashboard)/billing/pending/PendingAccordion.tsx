@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ChevronDown, ChevronRight, Archive } from 'lucide-react';
 import { PayButton } from './PayButton';
+import { ResyncButton } from './ResyncButton';
 
 interface InvoiceItem {
   id: number;
@@ -135,7 +136,10 @@ export function PendingAccordion({ students }: { students: StudentGroup[] }) {
                           ${inv.amount.toLocaleString()}
                         </td>
                         <td className="px-4 py-2 text-center">
-                          <PayButton invoiceId={inv.id} serial={inv.serialNumber} amount={inv.amount} />
+                          <div className="flex items-center justify-center gap-1">
+                            <ResyncButton invoiceId={inv.id} serial={inv.serialNumber} />
+                            <PayButton invoiceId={inv.id} serial={inv.serialNumber} amount={inv.amount} />
+                          </div>
                         </td>
                       </tr>
                     ))}

@@ -3,7 +3,8 @@
 import { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ChevronDown, ChevronRight, Archive } from 'lucide-react';
+import { ChevronDown, ChevronRight, Archive, RefreshCw } from 'lucide-react';
+import { ResyncButton } from './pending/ResyncButton';
 
 // ── Types ──────────────────────────────────────────────
 
@@ -335,6 +336,7 @@ export default function BillingTable({
                           {mode === 'pending' && (
                             <td className="px-4 py-2 text-center">
                               <div className="flex items-center gap-1.5 justify-center">
+                                <ResyncButton invoiceId={inv.id} serial={inv.serialNumber} />
                                 <button onClick={() => handleDownloadPdf(inv.id, inv.serialNumber)}
                                   className="text-xs px-2 py-1 rounded bg-amber-50 text-amber-700 hover:bg-amber-100 whitespace-nowrap">
                                   🖨️
