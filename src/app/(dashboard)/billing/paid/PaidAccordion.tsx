@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { ReprintButton } from './ReprintButton';
+import { type InvoiceShape, isSplitShape, isIrregularShape } from '@/lib/invoice-validator';
 
 export interface PaidInvoiceItem {
   id: number;
@@ -11,6 +12,22 @@ export interface PaidInvoiceItem {
   amount: number;
   dates: string[];
   paymentDate: string | null;
+  shape: InvoiceShape;
+}
+
+function shapeRowClass(shape: InvoiceShape): string {
+  if (isIrregularShape(shape)) return 'font-bold text-red-700';
+  if (isSplitShape(shape)) return 'font-bold';
+  return '';
+}
+
+function ShapeBadge({ shape }: { shape: InvoiceShape }) {
+  if (shape === 'SPLIT_BRIDGE') return <span className="ml-1 text-[10px] px-1 py-0.5 rounded bg-purple-100 text-purple-700" title="拆分鏈條 Y+4×YY+Y">🔗</span>;
+  if (shape === 'SPLIT_HEAD')   return <span className="ml-1 text-[10px] px-1 py-0.5 rounded bg-purple-100 text-purple-700" title="鏈條頭 4×YY+Y 帶出">⬇</span>;
+  if (shape === 'SPLIT_TAIL')   return <span className="ml-1 text-[10px] px-1 py-0.5 rounded bg-purple-100 text-purple-700" title="鏈條尾 Y+4×YY 帶入">⬆</span>;
+  if (shape === 'IRREGULAR')    return <span className="ml-1 text-[10px] px-1 py-0.5 rounded bg-red-100 text-red-700" title="異常形態">⚠</span>;
+  if (shape === 'WITH_HALF')    return <span className="ml-1 text-[10px] px-1 py-0.5 rounded bg-yellow-100 text-yellow-700" title="含半堂 Y">½</span>;
+  return null;
 }
 
 export interface PaidStudentGroup {
@@ -80,23 +97,29 @@ export default function PaidAccordion({ groups }: { groups: PaidStudentGroup[] }
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50">
-                    {student.invoices.map(inv => (
-                      <tr key={inv.id} className="hover:bg-green-50/20">
-                        <td className="px-4 py-2 font-mono text-xs text-gray-600">{inv.serialNumber}</td>
-                        <td className="px-4 py-2 text-xs text-gray-500">
-                          {inv.dates.length > 0 ? inv.dates.join(', ') : '—'}
-                        </td>
-                        <td className="px-4 py-2 text-right font-mono text-sm font-bold text-green-700">
-                          ${inv.amount.toLocaleString()}
-                        </td>
-                        <td className="px-4 py-2 text-xs text-gray-500">
-                          {inv.paymentDate ?? '—'}
-                        </td>
-                        <td className="px-4 py-2 text-center">
-                          <ReprintButton invoiceId={inv.id} serial={inv.serialNumber} />
-                        </td>
-                      </tr>
-                    ))}
+                    {student.invoices.map(inv => {
+                      const rowCls = shapeRowClass(inv.shape);
+                      return (
+                        <tr key={inv.id} className={`hover:bg-green-50/20 ${rowCls}`}>
+                          <td className="px-4 py-2 font-mono text-xs text-gray-600">
+                            {inv.serialNumber}
+                            <ShapeBadge shape={inv.shape} />
+                          </td>
+                          <td className="px-4 py-2 text-xs text-gray-500">
+                            {inv.dates.length > 0 ? inv.dates.join(', ') : '—'}
+                          </td>
+                          <td className="px-4 py-2 text-right font-mono text-sm text-green-700">
+                            ${inv.amount.toLocaleString()}
+                          </td>
+                          <td className="px-4 py-2 text-xs text-gray-500">
+                            {inv.paymentDate ?? '—'}
+                          </td>
+                          <td className="px-4 py-2 text-center">
+                            <ReprintButton invoiceId={inv.id} serial={inv.serialNumber} />
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>

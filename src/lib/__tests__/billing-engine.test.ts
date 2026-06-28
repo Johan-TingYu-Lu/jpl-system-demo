@@ -117,4 +117,66 @@ describe('calculateBilling', () => {
     expect(result.canGenerate).toBe(true);
     expect(result.leftoverEntries).toHaveLength(3); // split remainder + 2 unconsumed
   });
+
+  test('carriedFromPrev: 帶入 1Y + 4 YY + 拆出 1Y = 標準拆分鏈條 (Plan B)', () => {
+    // 上期帶出 02/25，本期實際出席 03/03~04/14 共 5 次 YY
+    const attendance: AttendanceEntry[] = [
+      { date: '2026/03/03', status: 3 },
+      { date: '2026/03/10', status: 3 },
+      { date: '2026/03/17', status: 3 },
+      { date: '2026/03/24', status: 3 },
+      { date: '2026/04/14', status: 3 },
+    ];
+    const result = calculateBilling(attendance, PLAN_B, 'normal', { date: '2026/02/25' });
+
+    expect(result.canGenerate).toBe(true);
+    expect(result.records).toHaveLength(6); // 帶入 + 4 YY + 帶出
+    expect(result.records[0]).toEqual({
+      date: '2026/02/25', status: 3, yUsed: 1, fee: 400, isSplit: true,
+    });
+    expect(result.records[5]).toEqual({
+      date: '2026/04/14', status: 3, yUsed: 1, fee: 400, isSplit: true,
+    });
+    expect(result.totalY).toBe(10);
+    expect(result.totalFee).toBe(4000);
+    expect(result.yyCount).toBe(4);
+    expect(result.yCount).toBe(2); // 帶入 + 帶出
+    expect(result.splitNote).toBe('拆分：2026/02/25 帶入 1Y；2026/04/14 帶出 1Y');
+    expect(result.carriedOut).toBe('2026/04/14');
+  });
+
+  test('carriedFromPrev only (帶入 + 5 YY 不拆出，理論不會發生但需正確)', () => {
+    // 帶入 1Y 後，4 YY (8Y) 加帶入 = 9Y，第 5 個 YY (2Y) 會拆 → 結算
+    // 所以這 case 實際必拆。為驗證「不拆出」需要 force mode + 短輸入。
+    const result = calculateBilling(
+      [{ date: '2026/03/03', status: 3 }],
+      PLAN_B,
+      'force',
+      { date: '2026/02/25' },
+    );
+    expect(result.records).toHaveLength(2);
+    expect(result.records[0].isSplit).toBe(true);  // 帶入
+    expect(result.records[1].isSplit).toBe(false); // 1 YY
+    expect(result.totalY).toBe(3);
+    expect(result.totalFee).toBe(400 + 800);
+    expect(result.splitNote).toBe('拆分：2026/02/25 帶入 1Y');
+    expect(result.carriedOut).toBeNull();
+  });
+
+  test('carriedOut 為 null 當無拆分發生', () => {
+    const result = calculateBilling(makeYY(5), PLAN_B);
+    expect(result.carriedOut).toBeNull();
+    expect(result.splitNote).toBeNull();
+  });
+
+  test('carriedOut 為帶出日期當本期最後一筆是拆分', () => {
+    const attendance: AttendanceEntry[] = [
+      ...makeYY(4),
+      { date: '2026/01/15', status: 2 },   // 9Y
+      { date: '2026/01/18', status: 3 },   // split
+    ];
+    const result = calculateBilling(attendance, PLAN_B);
+    expect(result.carriedOut).toBe('2026/01/18');
+    expect(result.splitNote).toBe('拆分：2026/01/18 帶出 1Y');
+  });
 });

@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ChevronDown, ChevronRight, Archive, RefreshCw } from 'lucide-react';
 import { ResyncButton } from './pending/ResyncButton';
+import { ReceiptSerial } from './ReceiptSerial';
+import { type InvoiceShape, isSplitShape, isIrregularShape } from '@/lib/invoice-validator';
 
 // ── Types ──────────────────────────────────────────────
 
@@ -34,6 +36,25 @@ export interface InvoiceItem {
   endDate: string;
   dates: string[];
   createdAt: string;
+  shape: InvoiceShape;
+  status: string;  // 'draft' | 'pending' | 'archived' — draft 需要重推 Sheet
+}
+
+/** 依 shape 給整列的 className（粗體 / 異常紅字） */
+function shapeRowClass(shape: InvoiceShape): string {
+  if (isIrregularShape(shape)) return 'font-bold text-red-700';
+  if (isSplitShape(shape)) return 'font-bold';
+  return '';
+}
+
+/** 依 shape 給的 badge */
+function ShapeBadge({ shape }: { shape: InvoiceShape }) {
+  if (shape === 'SPLIT_BRIDGE') return <span className="ml-1 text-[10px] px-1 py-0.5 rounded bg-purple-100 text-purple-700" title="拆分鏈條 Y+4×YY+Y">🔗</span>;
+  if (shape === 'SPLIT_HEAD')   return <span className="ml-1 text-[10px] px-1 py-0.5 rounded bg-purple-100 text-purple-700" title="鏈條頭 4×YY+Y 帶出">⬇</span>;
+  if (shape === 'SPLIT_TAIL')   return <span className="ml-1 text-[10px] px-1 py-0.5 rounded bg-purple-100 text-purple-700" title="鏈條尾 Y+4×YY 帶入">⬆</span>;
+  if (shape === 'IRREGULAR')    return <span className="ml-1 text-[10px] px-1 py-0.5 rounded bg-red-100 text-red-700" title="異常形態">⚠</span>;
+  if (shape === 'WITH_HALF')    return <span className="ml-1 text-[10px] px-1 py-0.5 rounded bg-yellow-100 text-yellow-700" title="含半堂 Y">½</span>;
+  return null;
 }
 
 export interface StudentGroup {
@@ -63,6 +84,7 @@ export default function BillingTable({
   pendingGroups,
   archivedGroups,
   pendingCount,
+  draftCount,
   archivedCount,
   currentYear,
 }: {
@@ -71,11 +93,13 @@ export default function BillingTable({
   pendingGroups: StudentGroup[];
   archivedGroups: StudentGroup[];
   pendingCount: number;
+  draftCount: number;        // 已生成但未推 Sheet 的張數
   archivedCount: number;
   currentYear: number;
 }) {
   const router = useRouter();
-  const [tab, setTab] = useState<Tab>(pendingCount > 0 ? 'pending' : 'generate');
+  const [tab, setTab] = useState<Tab>(pendingCount + draftCount > 0 ? 'pending' : 'generate');
+  const [pushingSheet, setPushingSheet] = useState<Set<number>>(new Set());
 
   // ── Generate tab state ──
   const readyRows = rows.filter(r => r.canGenerate);
@@ -121,6 +145,29 @@ export default function BillingTable({
     } catch { alert('網路錯誤'); }
   }
 
+  // ── Draft tab: push to Sheet (升級 draft → pending) ──
+  async function handlePushSheet(invoiceId: number, serial: string) {
+    if (!confirm(`重新推送 ${serial} 到 Sheet 計費日期表？\n\n成功後狀態會變成「待收費」。`)) return;
+    setPushingSheet(prev => new Set(prev).add(invoiceId));
+    try {
+      const res = await fetch('/api/invoices/push', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ invoiceIds: [invoiceId] }),
+      });
+      const data = await res.json();
+      if (data.pushed > 0) {
+        router.refresh();
+      } else {
+        const errMsg = data.results?.[0]?.error || data.error || '未知錯誤';
+        alert(`推送失敗: ${errMsg}`);
+      }
+    } catch (e) {
+      alert(`網路錯誤: ${e instanceof Error ? e.message : String(e)}`);
+    } finally {
+      setPushingSheet(prev => { const n = new Set(prev); n.delete(invoiceId); return n; });
+    }
+  }
+
   // ── Pending tab: pay ──
   async function handlePay(invoiceId: number, serial: string, amount: number) {
     if (!confirm(`確認銷帳 ${serial}，金額 $${amount.toLocaleString()}？`)) return;
@@ -135,13 +182,20 @@ export default function BillingTable({
     } catch { alert('網路錯誤'); }
   }
 
-  // ── Pending tab: archive whole student ──
+  // ── Pending tab: archive whole student（只能封存 pending；draft 需先推 Sheet）──
   async function handleArchive(student: StudentGroup) {
-    const total = student.invoices.reduce((s, i) => s + i.amount, 0);
-    if (!confirm(`封存 ${student.name}（${student.sheetsId}）的 ${student.invoices.length} 張待收費單，共 $${total.toLocaleString()}？\n\n封存後移至「已封存」分頁。`)) return;
+    const archivableInvoices = student.invoices.filter(i => i.status === 'pending');
+    const draftCount = student.invoices.length - archivableInvoices.length;
+    if (archivableInvoices.length === 0) {
+      alert(`${student.name} 沒有可封存的收費單（${draftCount} 張為草稿，需先推送 Sheet）`);
+      return;
+    }
+    const total = archivableInvoices.reduce((s, i) => s + i.amount, 0);
+    const draftNote = draftCount > 0 ? `\n\n（${draftCount} 張草稿不會封存）` : '';
+    if (!confirm(`封存 ${student.name}（${student.sheetsId}）的 ${archivableInvoices.length} 張待收費單，共 $${total.toLocaleString()}？\n\n封存後移至「已封存」分頁。${draftNote}`)) return;
 
     setArchiving(prev => new Set(prev).add(student.sheetsId));
-    for (const inv of student.invoices) {
+    for (const inv of archivableInvoices) {
       try {
         const res = await fetch(`/api/invoices/${inv.id}/archive`, { method: 'POST' });
         const data = await res.json();
@@ -273,6 +327,7 @@ export default function BillingTable({
           const isArchivingThis = archiving.has(student.sheetsId);
           const isUnarchivingThis = unarchiving.has(student.sheetsId);
           const total = student.invoices.reduce((s, i) => s + i.amount, 0);
+          const studentDraftCount = mode === 'pending' ? student.invoices.filter(i => i.status === 'draft').length : 0;
 
           return (
             <div key={student.sheetsId} className="bg-white rounded-xl border border-gray-200 overflow-hidden">
@@ -284,7 +339,14 @@ export default function BillingTable({
                 <span className="font-mono text-sm text-gray-500 w-12">{student.sheetsId}</span>
                 <span className="font-medium text-gray-900 w-24">{student.name}</span>
                 <span className="text-xs text-gray-500 w-32">{student.className}</span>
-                <span className="text-xs text-amber-600 font-medium w-16">{student.invoices.length} 張</span>
+                <span className="text-xs font-medium w-28 flex items-center gap-1">
+                  <span className="text-amber-600">{student.invoices.length} 張</span>
+                  {studentDraftCount > 0 && (
+                    <span className="text-[10px] px-1 py-0.5 rounded bg-purple-100 text-purple-700" title="含未推送 Sheet 的草稿">
+                      {studentDraftCount} 草稿
+                    </span>
+                  )}
+                </span>
                 <span className="font-mono text-sm font-bold text-amber-700 flex-1">${total.toLocaleString()}</span>
 
                 {mode === 'pending' && (
@@ -323,33 +385,66 @@ export default function BillingTable({
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-50">
-                      {student.invoices.map(inv => (
-                        <tr key={inv.id} className="hover:bg-amber-50/20">
-                          <td className="px-4 py-2 font-mono text-xs text-gray-600">{inv.serialNumber}</td>
-                          <td className="px-4 py-2 text-xs text-gray-500">{inv.startDate} ~ {inv.endDate}</td>
-                          <td className="px-4 py-2 text-xs text-gray-500">
-                            {inv.dates.length > 0 ? inv.dates.join(', ') : '—'}
-                          </td>
-                          <td className="px-4 py-2 text-right font-mono text-sm font-bold text-amber-700">
-                            ${inv.amount.toLocaleString()}
-                          </td>
-                          {mode === 'pending' && (
-                            <td className="px-4 py-2 text-center">
-                              <div className="flex items-center gap-1.5 justify-center">
-                                <ResyncButton invoiceId={inv.id} serial={inv.serialNumber} />
-                                <button onClick={() => handleDownloadPdf(inv.id, inv.serialNumber)}
-                                  className="text-xs px-2 py-1 rounded bg-amber-50 text-amber-700 hover:bg-amber-100 whitespace-nowrap">
-                                  🖨️
-                                </button>
-                                <button onClick={() => handlePay(inv.id, inv.serialNumber, inv.amount)}
-                                  className="text-xs px-2.5 py-1 rounded bg-green-500 text-white hover:bg-green-600 whitespace-nowrap font-medium">
-                                  銷帳
-                                </button>
-                              </div>
+                      {student.invoices.map(inv => {
+                        const rowCls = shapeRowClass(inv.shape);
+                        const isDraft = inv.status === 'draft';
+                        const isPushing = pushingSheet.has(inv.id);
+                        return (
+                          <tr key={inv.id} className={`${isDraft ? 'bg-purple-50/40' : 'hover:bg-amber-50/20'} ${rowCls}`}>
+                            <td className="px-4 py-2 font-mono text-xs text-gray-600">
+                              {mode === 'pending'
+                                ? <ReceiptSerial invoiceId={inv.id} serial={inv.serialNumber} />
+                                : inv.serialNumber}
+                              <ShapeBadge shape={inv.shape} />
+                              {isDraft && (
+                                <span className="ml-1 text-[10px] px-1.5 py-0.5 rounded bg-purple-100 text-purple-700 font-medium" title="已生成但未推送到 Sheet 計費日期表">
+                                  未推送
+                                </span>
+                              )}
                             </td>
-                          )}
-                        </tr>
-                      ))}
+                            <td className="px-4 py-2 text-xs text-gray-500">{inv.startDate} ~ {inv.endDate}</td>
+                            <td className="px-4 py-2 text-xs text-gray-500">
+                              {inv.dates.length > 0 ? inv.dates.join(', ') : '—'}
+                            </td>
+                            <td className="px-4 py-2 text-right font-mono text-sm text-amber-700">
+                              ${inv.amount.toLocaleString()}
+                            </td>
+                            {mode === 'pending' && (
+                              <td className="px-4 py-2 text-center">
+                                <div className="flex items-center gap-1.5 justify-center">
+                                  {isDraft ? (
+                                    <>
+                                      <button onClick={() => handleDownloadPdf(inv.id, inv.serialNumber)}
+                                        className="text-xs px-2 py-1 rounded bg-amber-50 text-amber-700 hover:bg-amber-100 whitespace-nowrap"
+                                        title="下載 PDF">
+                                        🖨️
+                                      </button>
+                                      <button onClick={() => handlePushSheet(inv.id, inv.serialNumber)}
+                                        disabled={isPushing}
+                                        className="text-xs px-2.5 py-1 rounded bg-purple-500 text-white hover:bg-purple-600 disabled:opacity-50 whitespace-nowrap font-medium"
+                                        title="推送計費日期到 Sheet，狀態升級為待收費">
+                                        {isPushing ? '推送中...' : '🔄 推送 Sheet'}
+                                      </button>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <ResyncButton invoiceId={inv.id} serial={inv.serialNumber} />
+                                      <button onClick={() => handleDownloadPdf(inv.id, inv.serialNumber)}
+                                        className="text-xs px-2 py-1 rounded bg-amber-50 text-amber-700 hover:bg-amber-100 whitespace-nowrap">
+                                        🖨️
+                                      </button>
+                                      <button onClick={() => handlePay(inv.id, inv.serialNumber, inv.amount)}
+                                        className="text-xs px-2.5 py-1 rounded bg-green-500 text-white hover:bg-green-600 whitespace-nowrap font-medium">
+                                        銷帳
+                                      </button>
+                                    </>
+                                  )}
+                                </div>
+                              </td>
+                            )}
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
@@ -375,6 +470,11 @@ export default function BillingTable({
           className={`px-5 py-3 text-sm font-medium border-b-2 transition-colors ${tab === 'pending' ? 'border-amber-500 text-amber-700' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
           💰 未銷帳
           {pendingCount > 0 && <span className="ml-2 px-2 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-700">{pendingCount}</span>}
+          {draftCount > 0 && (
+            <span className="ml-1 px-2 py-0.5 rounded-full text-xs font-bold bg-purple-100 text-purple-700" title={`${draftCount} 張草稿未推送 Sheet`}>
+              +{draftCount} 草稿
+            </span>
+          )}
         </button>
         <button onClick={() => setTab('generate')}
           className={`px-5 py-3 text-sm font-medium border-b-2 transition-colors ${tab === 'generate' ? 'border-blue-500 text-blue-700' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
@@ -503,10 +603,18 @@ export default function BillingTable({
                             </button>
                           )}
                           {job?.status === 'done' && job.invoiceId && (
-                            <button onClick={() => handleDownloadPdf(job.invoiceId!, job.serial ?? '')}
-                              className="text-xs px-2 py-1 rounded bg-green-50 text-green-700 hover:bg-green-100 whitespace-nowrap">
-                              📥 再下載
-                            </button>
+                            <div className="flex items-center gap-1.5 justify-center">
+                              <ReceiptSerial
+                                invoiceId={job.invoiceId}
+                                serial={job.serial ?? ''}
+                                label="👁 預覽"
+                                className="text-xs px-2 py-1 rounded bg-blue-50 text-blue-700 hover:bg-blue-100 whitespace-nowrap cursor-pointer"
+                              />
+                              <button onClick={() => handleDownloadPdf(job.invoiceId!, job.serial ?? '')}
+                                className="text-xs px-2 py-1 rounded bg-green-50 text-green-700 hover:bg-green-100 whitespace-nowrap">
+                                📥 再下載
+                              </button>
+                            </div>
                           )}
                           {job?.status === 'error' && <span className="text-xs text-red-500 max-w-[100px] truncate" title={job.error}>{job.error}</span>}
                         </td>

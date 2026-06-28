@@ -3,6 +3,8 @@
  *
  * 取代 import-invoices.ts 的 calculate10Y()
  * 支援所有費率方案（A/B/C-850/C-900）
+ *
+ * v3: 加 carriedFromPrev — 處理拆分鏈條（上期帶出 1Y → 本期 records 第一筆帶入）
  */
 
 // ============================================================================
@@ -29,6 +31,15 @@ export interface BilledRecord {
   isSplit: boolean;  // true if this YY was split (only 1Y charged here)
 }
 
+/**
+ * 從上期帶入的 1Y（上期的最後一筆 YY 被拆分，剩 1.5hr 帶入本期）。
+ * 給 calculateBilling 第三個參數使用，會在 records 開頭塞一筆 isSplit=true 帶入。
+ */
+export interface CarriedFromPrev {
+  /** 上期帶出的那天 (YYYY/MM/DD) */
+  date: string;
+}
+
 export interface BillingResult {
   canGenerate: boolean;         // true if settlement point reached (or force mode)
   records: BilledRecord[];      // itemized records for this invoice
@@ -36,9 +47,11 @@ export interface BillingResult {
   totalFee: number;             // sum of fees
   yyCount: number;              // count of full YY sessions billed
   yCount: number;               // count of Y sessions billed (includes split halves)
-  splitNote: string | null;     // note text if a split occurred
+  splitNote: string | null;     // note text if a split occurred (DB 用 "拆分：..." 格式)
   sessionInfoText: string;      // e.g., "5次15H" for display
   leftoverEntries: AttendanceEntry[]; // unconsumed entries for next period
+  /** 本期帶出的那天（最後一筆 isSplit=true 的日期），下期應作為 carriedFromPrev 帶入 */
+  carriedOut: string | null;
 }
 
 // ============================================================================
@@ -48,15 +61,31 @@ export interface BillingResult {
 export function calculateBilling(
   attendance: AttendanceEntry[],
   rateConfig: RateConfig,
-  mode: 'normal' | 'force' = 'normal'
+  mode: 'normal' | 'force' = 'normal',
+  carriedFromPrev?: CarriedFromPrev,
 ): BillingResult {
   const { fullSessionFee, halfSessionFee, settlementSessions, hoursPerSession } = rateConfig;
   const settlementY = settlementSessions * 2; // target Y count (e.g., 10)
 
   let yAccum = 0;
   const records: BilledRecord[] = [];
-  let splitNote: string | null = null;
   let lastProcessedIdx = -1;
+
+  // 帶入 1Y：上期最後一筆拆分的剩餘 1.5hr，本期視為 isSplit=true (1Y / halfFee)
+  let carriedInDate: string | null = null;
+  if (carriedFromPrev) {
+    carriedInDate = carriedFromPrev.date;
+    records.push({
+      date: carriedFromPrev.date,
+      status: 3,
+      yUsed: 1,
+      fee: halfSessionFee,
+      isSplit: true,
+    });
+    yAccum = 1;
+  }
+
+  let carriedOutDate: string | null = null;
 
   for (let i = 0; i < attendance.length; i++) {
     const { date, status } = attendance[i];
@@ -74,11 +103,7 @@ export function calculateBilling(
       });
       yAccum = settlementY;
       lastProcessedIdx = i;
-
-      // Generate the split note
-      const dateParts = date.split('/');
-      const shortDate = `${dateParts[1]}/${dateParts[2]}`;
-      splitNote = `(註：${shortDate}上課${hoursPerSession}小時，計費${hoursPerSession / 2}hr，尚有${hoursPerSession / 2}hr未記入本次收費，下次收取)`;
+      carriedOutDate = date;
       break;
     } else {
       const fee = status === 3 ? fullSessionFee : halfSessionFee;
@@ -100,11 +125,10 @@ export function calculateBilling(
   // Build leftover entries (unconsumed attendance)
   const leftoverEntries: AttendanceEntry[] = [];
   if (lastProcessedIdx >= 0) {
-    // If last processed entry was a split, add the remaining half
-    const lastRecord = records[records.length - 1];
-    if (lastRecord?.isSplit) {
+    // If last processed entry was a split (carried-out), add the remaining half
+    if (carriedOutDate) {
       leftoverEntries.push({
-        date: attendance[lastProcessedIdx].date,
+        date: carriedOutDate,
         status: 2, // the remaining half is effectively a Y
       });
     }
@@ -124,6 +148,15 @@ export function calculateBilling(
   }, 0);
   const sessionInfoText = `${records.length}次${totalHours}H`;
 
+  // splitNote: DB 用 "拆分：..." 格式 (PDF 自己 buildSplitNote 不依賴此欄)
+  let splitNote: string | null = null;
+  if (carriedInDate || carriedOutDate) {
+    const parts: string[] = [];
+    if (carriedInDate) parts.push(`${carriedInDate} 帶入 1Y`);
+    if (carriedOutDate) parts.push(`${carriedOutDate} 帶出 1Y`);
+    splitNote = `拆分：${parts.join('；')}`;
+  }
+
   return {
     canGenerate,
     records,
@@ -134,5 +167,6 @@ export function calculateBilling(
     splitNote,
     sessionInfoText,
     leftoverEntries,
+    carriedOut: carriedOutDate,
   };
 }

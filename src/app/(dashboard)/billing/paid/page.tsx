@@ -2,6 +2,8 @@ import prisma from '@/lib/prisma';
 import { CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
 import { calendarYearToAcademicYear } from '@/lib/year-config';
+import { classifyShape } from '@/lib/invoice-validator';
+import type { BilledRecord } from '@/lib/billing-engine';
 import PaidAccordion, { type PaidStudentGroup } from './PaidAccordion';
 
 export default async function PaidPage() {
@@ -38,8 +40,9 @@ export default async function PaidPage() {
         invoices: [],
       });
     }
-    const records = (inv.records || []) as { date: string }[];
-    const dates = records.map(r => r.date.replace(/^\d{4}\//, ''));
+    const records = (inv.records || []) as unknown as BilledRecord[];
+    const dates = records.map(r => `${r.date.replace(/^\d{4}\//, '')}${r.isSplit ? '*' : ''}`);
+    const shape = classifyShape(records).shape;
     groupMap.get(sid)!.invoices.push({
       id: inv.id,
       serialNumber: inv.serialNumber,
@@ -48,6 +51,7 @@ export default async function PaidPage() {
       paymentDate: inv.payments[0]?.paymentDate
         ? inv.payments[0].paymentDate.toISOString().slice(0, 10)
         : null,
+      shape,
     });
   }
 

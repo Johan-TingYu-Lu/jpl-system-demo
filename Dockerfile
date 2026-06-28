@@ -24,6 +24,7 @@ ENV NODE_ENV=production
 ENV PORT=8080
 
 # Install XeLaTeX + CJK support for PDF generation
+# poppler-utils 提供 pdftocairo：收費單上半部預覽圖 (/api/invoices/[id]/receipt-image) 需要
 RUN apk add --no-cache \
     texlive-xetex \
     texmf-dist-latexextra \
@@ -32,6 +33,7 @@ RUN apk add --no-cache \
     texmf-dist-langcjk \
     texmf-dist-plaingeneric \
     texmf-dist-fontsrecommended \
+    poppler-utils \
     && mkdir -p /usr/share/fonts/custom
 
 # Copy custom fonts (標楷體)
@@ -62,6 +64,7 @@ USER nextjs
 
 # XeLaTeX env vars for Cloud Run
 ENV XELATEX_PATH=/usr/bin/xelatex
+ENV PDFTOCAIRO_PATH=/usr/bin/pdftocairo
 ENV STAMP_DIR=/app/stamps
 ENV FONT_DIR=/usr/share/fonts/custom/
 

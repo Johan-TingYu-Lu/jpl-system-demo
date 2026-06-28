@@ -6,7 +6,8 @@ import prisma from './prisma';
 export interface AuditLogInput {
   tableName: string;
   recordId: number;
-  action: 'CREATE' | 'UPDATE' | 'DELETE';
+  // PUSH_FAILED: Sheet 推送失敗（保留 draft 狀態），用於追蹤推送錯誤
+  action: 'CREATE' | 'UPDATE' | 'DELETE' | 'PUSH_FAILED';
   beforeData?: unknown;
   afterData?: unknown;
   changedBy?: string;

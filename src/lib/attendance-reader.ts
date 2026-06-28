@@ -66,3 +66,41 @@ export async function getLastInvoiceEndDate(enrollmentId: number): Promise<Date 
   console.warn(`[getLastInvoiceEndDate] Invoice for enrollment ${enrollmentId} has empty records, using endDate as fallback`);
   return lastInvoice.endDate;
 }
+
+/**
+ * 取得上一張 invoice 的「拆分尾巴」：endDate + 是否帶出 1Y。
+ *
+ * 給 invoice-generator/resyncer 用：若上張最後一筆 isSplit=true，
+ * 則本張需從 carriedFromPrev = { date } 開始計費（attendance 從帶出日之後再取）。
+ */
+export interface LastInvoiceTail {
+  /** 上張最後一個有效日期（用於 attendance 篩選） */
+  endDate: Date;
+  /** 上張帶出的那天（YYYY/MM/DD），無拆分則為 null */
+  carriedOut: string | null;
+}
+
+export async function getLastInvoiceTail(enrollmentId: number): Promise<LastInvoiceTail | null> {
+  const lastInvoice = await prisma.invoice.findFirst({
+    where: { enrollmentId },
+    orderBy: { endDate: 'desc' },
+    select: { endDate: true, records: true },
+  });
+  if (!lastInvoice) return null;
+
+  const records = lastInvoice.records as { date: string; isSplit?: boolean }[] | null;
+  let endDate = lastInvoice.endDate;
+  let carriedOut: string | null = null;
+
+  if (records && Array.isArray(records) && records.length > 0) {
+    const last = records[records.length - 1];
+    const [y, m, d] = last.date.split('/').map(Number);
+    const recordDate = new Date(Date.UTC(y, m - 1, d));
+    if (recordDate > endDate) endDate = recordDate;
+    if (last.isSplit) carriedOut = last.date;
+  } else {
+    console.warn(`[getLastInvoiceTail] Invoice for enrollment ${enrollmentId} has empty records`);
+  }
+
+  return { endDate, carriedOut };
+}

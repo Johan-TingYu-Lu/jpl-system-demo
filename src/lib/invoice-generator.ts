@@ -5,7 +5,7 @@
  */
 import prisma from './prisma';
 import { calculateBilling, type BillingResult, type RateConfig } from './billing-engine';
-import { getBillableAttendance, getLastInvoiceEndDate } from './attendance-reader';
+import { getBillableAttendance, getLastInvoiceTail } from './attendance-reader';
 import { resolveRateConfig, resolveAllRateConfigs, type ResolvedRate } from './rate-resolver';
 import { renderInvoicePdf } from './pdf-renderer';
 import { createAuditLog } from './audit';
@@ -13,6 +13,7 @@ import { makeSerial as _makeSerial, makeHash } from './serial-utils';
 import { pushBillingDates } from './sheets-push';
 import { calendarYearToAcademicYear } from './year-config';
 import { isExcluded, ACTIVE_STATUS_FILTER } from './enrollment-status';
+import { classifyShape, validateSingle, isIrregularShape } from './invoice-validator';
 
 interface GenerateInvoiceInput {
   enrollmentId: number;
@@ -47,15 +48,19 @@ export async function generateInvoice(input: GenerateInvoiceInput): Promise<Gene
   const resolved = await resolveRateConfig(enrollment);
   const rateConfig = resolved.config;
 
-  // 3. Get last invoice end date (the "FLAG")
-  const lastEndDate = await getLastInvoiceEndDate(enrollmentId);
+  // 3. Get last invoice tail (FLAG + 拆分帶出資訊)
+  const tail = await getLastInvoiceTail(enrollmentId);
+  const lastEndDate = tail?.endDate ?? null;
+  const carriedFromPrev = tail?.carriedOut ? { date: tail.carriedOut } : undefined;
 
   // 4. Get billable attendance after that date
   const attendance = await getBillableAttendance(enrollmentId, lastEndDate);
-  if (attendance.length === 0) return { success: false, error: 'No billable attendance found' };
+  if (attendance.length === 0 && !carriedFromPrev) {
+    return { success: false, error: 'No billable attendance found' };
+  }
 
-  // 5. Run billing engine
-  const billing = calculateBilling(attendance, rateConfig, mode);
+  // 5. Run billing engine（含上期帶入）
+  const billing = calculateBilling(attendance, rateConfig, mode, carriedFromPrev);
   if (!billing.canGenerate) {
     return {
       success: false,
@@ -86,6 +91,27 @@ export async function generateInvoice(input: GenerateInvoiceInput): Promise<Gene
   const startDate = parseUTCDate(billing.records[0].date);
   const endDate = parseUTCDate(billing.records[billing.records.length - 1].date);
 
+  // 7.5 Pre-save 驗證 records 形態 + 內部一致性
+  const shape = classifyShape(billing.records);
+  const tempForValidation = {
+    id: 0,
+    serialNumber: serial,
+    amount: billing.totalFee,
+    totalY: billing.totalY,
+    yyCount: billing.yyCount,
+    yCount: billing.yCount,
+    records: billing.records,
+    note: billing.splitNote,
+    status: 'draft',
+  };
+  const singleIssues = validateSingle(tempForValidation, rateConfig);
+  if (singleIssues.length > 0) {
+    console.warn(`[generateInvoice] ${serial} 單張驗證警告:`, singleIssues.map(i => `${i.field}: ${i.detail}`).join('; '));
+  }
+  if (isIrregularShape(shape.shape)) {
+    console.warn(`[generateInvoice] ${serial} records 形態異常: ${shape.description}`);
+  }
+
   // 8. Create invoice record
   const invoice = await prisma.invoice.create({
     data: {
@@ -104,12 +130,20 @@ export async function generateInvoice(input: GenerateInvoiceInput): Promise<Gene
     },
   });
 
-  // 9. Audit log
+  // 9. Audit log（含 shape 資訊）
   await createAuditLog({
     tableName: 'invoices',
     recordId: invoice.id,
     action: 'CREATE',
-    afterData: { serialNumber: serial, hashCode: hash, amount: billing.totalFee, enrollmentId },
+    afterData: {
+      serialNumber: serial,
+      hashCode: hash,
+      amount: billing.totalFee,
+      enrollmentId,
+      shape: shape.shape,
+      shapeDescription: shape.description,
+      singleIssues: singleIssues.length > 0 ? singleIssues : undefined,
+    },
     changedBy: 'system',
     reason: mode === 'force' ? 'Force generated' : 'Auto settlement',
   });
@@ -180,9 +214,28 @@ export async function pushInvoiceToSheets(invoiceId: number): Promise<{
       return { success: true, verified: true };
     }
 
-    return { success: false, verified: false, error: pushResult.error || 'Push not verified' };
+    // Push 失敗（pushResult.success=false 或 verified=false）→ 落 audit log 以利日後追蹤
+    const errMsg = pushResult.error || 'Push not verified';
+    await createAuditLog({
+      tableName: 'invoices',
+      recordId: invoiceId,
+      action: 'PUSH_FAILED',
+      afterData: { status: 'draft', sheetPushed: false, error: errMsg, pushResultSuccess: pushResult.success, pushResultVerified: pushResult.verified },
+      changedBy: 'system',
+      reason: `推送 Sheets 失敗（保留 draft）: ${inv.serialNumber} — ${errMsg}`,
+    }).catch(logErr => console.error(`[pushInvoiceToSheets] audit log 也寫失敗:`, logErr));
+    return { success: false, verified: false, error: errMsg };
   } catch (e: any) {
     console.error(`[pushInvoiceToSheets] Failed for ${inv.enrollment.sheetsId}:`, e);
+    // 例外路徑也落 audit log
+    await createAuditLog({
+      tableName: 'invoices',
+      recordId: invoiceId,
+      action: 'PUSH_FAILED',
+      afterData: { status: 'draft', sheetPushed: false, exception: String(e?.message ?? e) },
+      changedBy: 'system',
+      reason: `推送 Sheets 例外（保留 draft）: ${inv.serialNumber} — ${e?.message ?? e}`,
+    }).catch(logErr => console.error(`[pushInvoiceToSheets] audit log 也寫失敗:`, logErr));
     return { success: false, verified: false, error: e.message };
   }
 }
