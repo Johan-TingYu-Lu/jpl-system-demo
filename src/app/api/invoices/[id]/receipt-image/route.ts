@@ -26,7 +26,8 @@ function resolvePdftocairo(): string {
 }
 
 // A4 @ 150dpi = 1240 x 1754。上半部「收費單」到剪裁虛線約為頂端 ~33%。
-const CROP = { dpi: 150, x: 0, y: 110, w: 1240, h: 460 };
+// y 從頂端留 60px（含完整「收費單編號／驗證碼」行），高度 520 切到剪裁線前。
+const CROP = { dpi: 150, x: 0, y: 60, w: 1240, h: 520 };
 
 async function resolvePdfPath(invoiceId: number): Promise<string | null> {
   const invoice = await prisma.invoice.findUnique({
