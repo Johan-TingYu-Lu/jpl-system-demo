@@ -92,12 +92,15 @@ export default async function BillingPage() {
     const latest = e.invoices[0];
     // FLAG: 優先用 records 最後一天，fallback 用 endDate
     let lastEndDate: Date | null = latest?.endDate ?? null;
+    let carriedFromPrev: { date: string } | undefined;
     if (latest) {
-      const recs = latest.records as { date: string }[] | null;
+      const recs = latest.records as { date: string; isSplit?: boolean }[] | null;
       if (recs && Array.isArray(recs) && recs.length > 0) {
-        const lastRec = recs[recs.length - 1].date; // "2026/03/10"
-        const [y, m, d] = lastRec.split('/').map(Number);
+        const lastRecObj = recs[recs.length - 1];
+        const [y, m, d] = lastRecObj.date.split('/').map(Number);
         lastEndDate = new Date(Date.UTC(y, m - 1, d));
+        // 拆分鏈條：上張帶出 1Y → 估算也要帶入，否則「未生成」進度/預估金額會跟實際生成對不上
+        if (lastRecObj.isSplit) carriedFromPrev = { date: lastRecObj.date };
       }
     }
     const resolved = rateMap.get(e.sheetsId);
@@ -118,7 +121,7 @@ export default async function BillingPage() {
         .map(b => ({ date: b.dateStr, status: b.code as 2 | 3 }));
 
       if (filtered.length > 0) {
-        const billing = calculateBilling(filtered, rateConfig, 'normal');
+        const billing = calculateBilling(filtered, rateConfig, 'normal', carriedFromPrev);
         currentY = billing.totalY;
 
         canGenerate = billing.canGenerate;

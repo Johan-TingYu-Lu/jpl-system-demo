@@ -12,6 +12,7 @@ import {
   RefreshCw,
   BookOpen,
   Users,
+  Sun,
   LogOut,
   Menu,
   X,
@@ -24,6 +25,7 @@ const NAV_ITEMS = [
   { href: '/billing', label: '收費管理', icon: Receipt },
   { href: '/billing/paid', label: '已銷帳收費單', icon: CheckCircle2 },
   { href: '/billing/sync', label: '同步確認', icon: RefreshCw },
+  { href: '/billing/summer', label: '暑期點名', icon: Sun },
   { href: '/semester-fees', label: '書籍雜費', icon: BookOpen },
   { href: '/students', label: '學生管理', icon: Users },
 ];

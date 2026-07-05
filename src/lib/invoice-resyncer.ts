@@ -70,6 +70,11 @@ export async function resyncInvoice(input: ResyncInput): Promise<ResyncResult> {
     return { success: false, invoiceId, serialNumber: '', diffs: [], applied: false, error: 'Invoice not found' };
   }
 
+  // 防呆：已銷帳(paid)/已封存(archived) 不可重算 — 避免改動已收款收據的金額/序號/日期
+  if (invoice.status === 'paid' || invoice.status === 'archived') {
+    return { success: false, invoiceId, serialNumber: invoice.serialNumber, diffs: [], applied: false, error: `${invoice.status} 狀態不可重算` };
+  }
+
   // 2. Resolve rate config
   const resolved = await resolveRateConfig(invoice.enrollment);
   const rateConfig = resolved.config;

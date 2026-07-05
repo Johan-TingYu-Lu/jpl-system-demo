@@ -124,7 +124,8 @@ export async function renderInvoicePdf(invoiceId: number): Promise<RenderResult>
   }
   const dates = records.map(r => r.date);
   const name = invoice.enrollment.person.name;
-  const subject = invoice.enrollment.subject;
+  // 暑期結算合併單：科目顯示「數學/物理」，而非載體 enrollment 的單一科目
+  const subject = invoice.note?.startsWith('暑期結算') ? '數學/物理' : invoice.enrollment.subject;
 
   // 2. Compute display values
   const months = [...new Set(dates.map(d => d.split('/')[1]))].sort();
